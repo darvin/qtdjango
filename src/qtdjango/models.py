@@ -7,6 +7,9 @@
 
 from inspect import getmro
 
+
+
+
 def istype(obj, typename):
     try:
         return typename in [clsobj.__name__ for clsobj in getmro(obj.__class__)]
@@ -46,12 +49,25 @@ class IdField(Field):
 class TextField(Field):
     pass
 
+class DateField(Field):
+    pass
+
+class DateTimeField(DateField):
+    pass
 
 class CharField(Field):
     pass
 
 
+
+class BooleanField(Field):
+    pass
+
 class EmailField(CharField):
+    pass
+
+
+class FileField(CharField):
     pass
 
 class IntegerField(Field):
@@ -61,9 +77,13 @@ class IntegerField(Field):
     def dump(self, data):
         return int(data)
 
+class PositiveIntegerField(IntegerField):
+    pass
+
 class ForeignKey(Field):
     
     def load(self, data):
+        print self.model
         return self.model.get(data["id"])
     
     def dump(self, data):
@@ -72,6 +92,7 @@ class ForeignKey(Field):
     def __init__(self, model, verbose_name=None, *args, **kwargs):
         super(ForeignKey, self).__init__(verbose_name=verbose_name, *args, **kwargs)
         self.model = model
+        print "####", self.model, self.model.resource_name
         self.model.load()
         
         
@@ -85,33 +106,15 @@ class ForeignKey(Field):
 from connection import Connection
 
 
-def register(model):
-    model.load()
     
-def load_from_django(base_package, applist, include_models=None):
-
-    models = []
-
-    for app in applist:
-        thepackage = __import__(".".join((base_package, app, "models")))
-        models_package = getattr(getattr(thepackage, app), "models")
-        for modelname in dir(models_package):
-            model = getattr(models_package, modelname)
-            try:
-                if Model in getmro(model):
-                    if model.__name__ in include_models and include_models is not None:
-                        
-                        models.append(model)
-                        register(model)
-            except AttributeError:
-                pass
-    return models
 
 class Model(object):
     '''
     classdocs
     '''
     resource_name = None
+    """this is table of resource names of models"""
+    
     loaded = False
     fields = {}
 
@@ -122,7 +125,9 @@ class Model(object):
     def load(cls):
         if not cls.loaded:
             if cls.resource_name is None:
-                cls.resource_name =  cls.__name__.lower()+"s"
+                modulestr = cls.__module__.split(".")
+                module = modulestr[modulestr.index("models")-1]
+                cls.resource_name = module+r"/" +cls.__name__.lower()+"s"
                 print cls.resource_name
                 print cls.fields
             
@@ -131,7 +136,12 @@ class Model(object):
                 attr = getattr(cls,name)
                 if istype(attr, "Field"):
                     cls.fields[name]=attr
-                    delattr(cls, name)
+                    ###FIXME
+                    try:
+                        delattr(cls, name)
+                    except AttributeError:
+                        """Its becouse abstract models"""
+                        pass
             
             
             cls.fields["id"] = IdField("Id")
@@ -234,7 +244,12 @@ class Model(object):
     
     def __unicode__(self):
         return self._data
-    
+
+
+
+class User(Model):
+    #Todo: implement django behavoir
+    resource_name = "django/users/"
     
 if __name__=="__main__":
     

@@ -19,7 +19,11 @@ by lines:
     except ImportError:
         from qtdjango import models
 
-Then, install django piston and make you models avaible throuth it. Your `urls.py` and `handlers.py` must looks like mine: [urls.py](http://github.com/darvin/cryotec-service/blob/master/cryotec_service/api/urls.py) [handlers.py](http://github.com/darvin/cryotec-service/blob/master/cryotec_service/api/handlers.py) (this will be done automagically in future.)
+Then, install django piston and add to you `api.urls.py` (or another place):
+from qtdjango.piston_handlers import get_url_pattens
+
+    urlpatterns = get_url_pattens("your base package name", ("oneapp","secondapp"))
+
 
 That's all with server-side
 
