@@ -83,8 +83,14 @@ class PositiveIntegerField(IntegerField):
 class ForeignKey(Field):
     
     def load(self, data):
-        print self.model
-        return self.model.get(data["id"])
+        if data is not None:
+            if self.model.loaded:
+                return self.model.get(data["id"])
+            else:
+                return data
+        else:
+            return None
+        
     
     def dump(self, data):
         return unicode(data)
@@ -92,8 +98,7 @@ class ForeignKey(Field):
     def __init__(self, model, verbose_name=None, *args, **kwargs):
         super(ForeignKey, self).__init__(verbose_name=verbose_name, *args, **kwargs)
         self.model = model
-        print "####", self.model, self.model.resource_name
-        self.model.load()
+#        self.model.load()
         
         
 #        self.model.__setattr__("foreing_key_model_"+kwargs["self"].__name__, kwargs["self"])
@@ -106,7 +111,9 @@ class ForeignKey(Field):
 from connection import Connection
 
 
-    
+class ResourceNameError(Exception):
+    pass
+
 
 class Model(object):
     '''
@@ -116,7 +123,6 @@ class Model(object):
     """this is table of resource names of models"""
     
     loaded = False
-    fields = {}
 
     objects = []
 
@@ -125,31 +131,33 @@ class Model(object):
     def load(cls):
         if not cls.loaded:
             if cls.resource_name is None:
-                modulestr = cls.__module__.split(".")
-                module = modulestr[modulestr.index("models")-1]
-                cls.resource_name = module+r"/" +cls.__name__.lower()+"s"
-                print cls.resource_name
-                print cls.fields
-            
-            cls.fields={}
-            for name in dir(cls):
-                attr = getattr(cls,name)
-                if istype(attr, "Field"):
-                    cls.fields[name]=attr
-                    ###FIXME
-                    try:
-                        delattr(cls, name)
-                    except AttributeError:
-                        """Its becouse abstract models"""
-                        pass
+                raise ResourceNameError
             
             
-            cls.fields["id"] = IdField("Id")
+            
+            cls.id = IdField("Id")
             raw = Connection.get(cls.resource_name)
+
             cls.objects = [cls(**x) for x in raw]
             cls.loaded = True
-
-    
+            
+#    #Fixme
+    @classmethod
+    def refresh_foreing_keys(cls):
+        for obj in cls.objects:
+            for fieldname in dir(cls):
+                if isinstance(getattr(cls,fieldname), ForeignKey):
+                    if not istype(getattr(obj, fieldname), "Model"):
+                        setattr(obj, fieldname, getattr(cls, fieldname).load(getattr(obj, fieldname)))
+      
+      
+    @classmethod
+    def printall_foreing_keys(cls):
+        for obj in cls.objects:
+            for fieldname in dir(cls):
+                if isinstance(getattr(cls,fieldname), ForeignKey):
+                    print getattr(obj, fieldname)
+                    
     @classmethod
     def dump(cls):
         raise NonImplementedError
@@ -182,36 +190,28 @@ class Model(object):
 #            pass 
 #        return fclass.filter(\
 #                    **{self.__class__.__name__.lower():self})
-#    
-    def __setattr__(self, name, value):
-       
-        
-        try:
-            if name in object.__getattribute__(self, "_data"):
-                self._data[ name]= value
-        except AttributeError:
-            object.__setattr__(self, name, value)
     
-    def __getattribute__(self, name):
-        
-        
-        try:
-            return object.__getattribute__(self, name)
-        except AttributeError:
-#            if "_set" in name:
-#                return self.foreign_set(name.replace("_set",""))
-#            else:
-            return self._data[name]
+    @classmethod
+    def get_fields(cls):
+        """
+        Returns dict of class Fields
+        """
+        f = {}
+        for fieldname in dir(cls):
+            if istype(getattr(cls, fieldname), "Field"):
+                f[fieldname] = getattr(cls, fieldname)
+        return f
+
     
     def is_filtered(self, **kwargs):
         for field in kwargs:
             try:
-                if self._data[field]!=kwargs[field]:
+                if getattr(self, field)!=kwargs[field]:
                     return False
             except KeyError:
                 if "__" in field:
                     keymodel, keyfield = field.split("__")
-                    if self._data[keymodel]._data[keyfield]!=kwargs[field]:
+                    if getattr(getattr(self,keymodel),keyfield)!=kwargs[field]:
                         return False
                 else:
                     print field
@@ -222,13 +222,12 @@ class Model(object):
         super(Model,self).__init__()
         
         
-        self._data={}
-        for field in self.fields:
-            try:
-                self._data[field]=self.fields[field].load(initdict[field])
-            except KeyError:
-                self._data[field]=self.fields[field].blank()
-     
+        for fieldname, field in self.__class__.get_fields().items():
+#            try:
+                setattr(self, fieldname, field.load(initdict[fieldname]))
+#            except KeyError:
+#                setattr(self, fieldname, field.blank)
+#     
      
     def validate(self):
         pass
@@ -243,13 +242,15 @@ class Model(object):
         self.undumped = True
     
     def __unicode__(self):
-        return self._data
+        return "default unicode method"
 
 
 
 class User(Model):
     #Todo: implement django behavoir
     resource_name = "django/users/"
+    username = CharField() 
+    first_name = CharField()
     
 if __name__=="__main__":
     

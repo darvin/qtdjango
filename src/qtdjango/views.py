@@ -124,7 +124,7 @@ class BaseView(object):
         Constructor
         '''
         if self.fields == ():
-            self.fields = [x for x in self.model.fields]
+            self.fields = [x for x in self.model.get_fields()]
             
         
         
@@ -211,7 +211,7 @@ class TableModel(QtCore.QAbstractTableModel):
         elif orientation == QtCore.Qt.Vertical:
             return QtCore.QVariant()
         elif orientation == QtCore.Qt.Horizontal:
-            return QtCore.QString.fromUtf8(self.model.fields[self.fields[section]].get_label())
+            return QtCore.QString.fromUtf8(self.model.get_fields()[self.fields[section]].get_label())
         
 
     def data(self, index, role):
@@ -224,7 +224,7 @@ class TableModel(QtCore.QAbstractTableModel):
 
 
         field_raw_data = getattr(data[index.row()],self.fields[index.column()])
-        result = self.model.fields[self.fields[index.column()]].dump(field_raw_data)
+        result = self.model.get_fields()[self.fields[index.column()]].dump(field_raw_data)
         return QtCore.QVariant(result)
 
 
