@@ -157,7 +157,6 @@ class DetailView(QDialog, BaseView):
         Qt.QObject.connect(buttonBox, Qt.SIGNAL("accepted()"), self, Qt.SLOT("accept()"));
         Qt.QObject.connect(buttonBox, Qt.SIGNAL("rejected()"), self, Qt.SLOT("reject()"));
         self.formlayout.addRow(buttonBox)
-        
         self.setLayout(self.formlayout)
     
     def get_data_from_model(self):

@@ -9,7 +9,6 @@ from inspect import getmro
 
 
 
-
 def istype(obj, typename):
     try:
         return typename in [clsobj.__name__ for clsobj in getmro(obj.__class__)]
@@ -17,9 +16,7 @@ def istype(obj, typename):
         return False
 
 class Field(object):
-    
     widget = None
-    
     def __init__(self, verbose_name=None, *args, **kwargs):
         try:
             self.verbose_name = verbose_name
@@ -28,13 +25,13 @@ class Field(object):
 
     def load(self, data):
         return data
-    
+
     def dump(self, data):
         return data
-    
+
     def blank(self):
         return None
-    
+
     def get_label(self):
         try:
             return self.verbose_name
@@ -73,7 +70,7 @@ class FileField(CharField):
 class IntegerField(Field):
     def load(self, data):
         return int(data)
-    
+
     def dump(self, data):
         return int(data)
 
@@ -81,7 +78,7 @@ class PositiveIntegerField(IntegerField):
     pass
 
 class ForeignKey(Field):
-    
+
     def load(self, data):
         if data is not None:
             if self.model.loaded:
@@ -132,15 +129,11 @@ class Model(object):
         if not cls.loaded:
             if cls.resource_name is None:
                 raise ResourceNameError
-            
-            
-            
             cls.id = IdField("Id")
             raw = Connection.get(cls.resource_name)
 
             cls.objects = [cls(**x) for x in raw]
             cls.loaded = True
-            
 #    #Fixme
     @classmethod
     def refresh_foreing_keys(cls):
@@ -149,15 +142,15 @@ class Model(object):
                 if isinstance(getattr(cls,fieldname), ForeignKey):
                     if not istype(getattr(obj, fieldname), "Model"):
                         setattr(obj, fieldname, getattr(cls, fieldname).load(getattr(obj, fieldname)))
-      
-      
+
     @classmethod
     def printall_foreing_keys(cls):
         for obj in cls.objects:
             for fieldname in dir(cls):
                 if isinstance(getattr(cls,fieldname), ForeignKey):
+                    print getattr(cls, fieldname).model
                     print getattr(obj, fieldname)
-                    
+
     @classmethod
     def dump(cls):
         raise NonImplementedError
