@@ -6,7 +6,7 @@ This module must be imported from django enviroment
 from django.conf.urls.defaults import *
 from piston.resource import Resource
 from piston.handler import BaseHandler
-
+from helpers import get_resource_name_for_model, get_all_models
 
 
 class CollectionHandler(BaseHandler):
@@ -21,12 +21,12 @@ class CollectionHandler(BaseHandler):
         return self.model.objects.filter(**filterargs) 
 
 
-def get_url_pattens(models):
-    """Gets {"url":modelclass} dict, returns urls patterns"""
-
-    urlpatterns = [url(r"^"+urlst,\
+def get_url_pattens(app_list):
+    """Gets app list returns urls patterns"""
+    models = get_all_models(app_list, from_django=True)
+    urlpatterns = [url(r"^"+get_resource_name_for_model(model),\
             Resource(type(model.__name__+"Handler", (CollectionHandler,), {"model":model})
-                     )) for urlst, model in models.items()]
+                     )) for model in models]
  
 
     return patterns("", * urlpatterns)
