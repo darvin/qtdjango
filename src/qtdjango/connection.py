@@ -6,9 +6,7 @@ API_PATH= "/api/"
 
 class Connection(object):
     connection = Connection(ADDRESS)
-    
     @classmethod
     def get(self, resname, **kwargs):
-        print resname
         res = self.connection.request_get("%s%s" % (API_PATH,resname))["body"]
         return json.loads(res)

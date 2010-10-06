@@ -143,13 +143,13 @@ class Model(object):
                     if not istype(getattr(obj, fieldname), "Model"):
                         setattr(obj, fieldname, getattr(cls, fieldname).load(getattr(obj, fieldname)))
 
-    @classmethod
-    def printall_foreing_keys(cls):
-        for obj in cls.objects:
-            for fieldname in dir(cls):
-                if isinstance(getattr(cls,fieldname), ForeignKey):
-                    print getattr(cls, fieldname).model
-                    print getattr(obj, fieldname)
+    #@classmethod
+    #def printall_foreing_keys(cls):
+        #for obj in cls.objects:
+            #for fieldname in dir(cls):
+                #if isinstance(getattr(cls,fieldname), ForeignKey):
+                    #print getattr(cls, fieldname).model
+                    #print getattr(obj, fieldname)
 
     @classmethod
     def dump(cls):
@@ -216,15 +216,15 @@ class Model(object):
         
         
         for fieldname, field in self.__class__.get_fields().items():
-#            try:
+            try:
                 setattr(self, fieldname, field.load(initdict[fieldname]))
-#            except KeyError:
-#                setattr(self, fieldname, field.blank)
-#     
-     
+            except KeyError:
+                setattr(self, fieldname, field.blank())
+
+
     def validate(self):
         pass
-    
+
     def save(self):
         self.validate()
         

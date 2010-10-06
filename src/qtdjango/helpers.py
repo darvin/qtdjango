@@ -34,8 +34,6 @@ def get_all_models(app_list, from_django=False, exclude_model_names=("",)):
         for name in dir(module):
             try:
                 obj = getattr(module, name)
-                if obj.__name__=="Report":
-                    print obj, getmro(obj)
                 if model_base_class in getmro(obj) and obj.__module__==app+".models" and \
                             obj.__name__ not in exclude_model_names:
                     if not from_django:
@@ -54,7 +52,6 @@ def get_registered_models(path_to_django_project, app_list,
                           exclude_model_names=None):
     import sys
     sys.path.append(path_to_django_project)
-    print sys.path
 
     ms = get_all_models(app_list, from_django=False,\
                         exclude_model_names=exclude_model_names)
@@ -63,6 +60,6 @@ def get_registered_models(path_to_django_project, app_list,
     
     for model in ms:
         model.refresh_foreing_keys()
-        model.printall_foreing_keys()
+        #model.printall_foreing_keys()
     return ms
     
