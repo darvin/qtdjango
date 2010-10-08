@@ -28,7 +28,7 @@ class LabelWidget(QLabel, Widget):
         QLabel.__init__(self)
         
     def getData(self):
-        return self.text()
+        return unicode(self.text())
     
     def setData(self, data):
         if data is not None:
@@ -41,16 +41,19 @@ class ForeignKeyWidget(QComboBox, Widget):
         self.model = model
 
 
-        
+    def set_filter(self, filter):
+        self.qtmodel.set_filter(filter)
+
     def getData(self):
-        return None
-    
+        return self.qtmodel.get_qtdjango_model_by_int_index(\
+                self.currentIndex())
+
     def setData(self, data):
         self.qtmodel = ListModel(parent=self, filter=None,\
                                 model=self.model)
         self.setModel(self.qtmodel)
         if data is not None:
-            pass #FIXME
+            self.setCurrentIndex(self.qtmodel.get_index_of_model(data))
 
 
 
@@ -86,7 +89,7 @@ class TextEditWidget(QTextEdit, Widget):
         QTextEdit.__init__(self)
         
     def getData(self):
-        return self.toPlainText()
+        return unicode(self.toPlainText())
     
     def setData(self, data):
         if data is not None:

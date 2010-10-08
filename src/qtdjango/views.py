@@ -24,8 +24,13 @@ class BaseView(object):
         '''
         Constructor
         '''
+        self.model.add_notify(self)
         if self.fields == ():
             self.fields = [x for x in self.model.get_fields()]
+
+    def refresh(self):
+        """docstring for dataChanged"""
+        pass
 
 
 class DetailView(QDialog, BaseView):
@@ -36,7 +41,7 @@ class DetailView(QDialog, BaseView):
                        ForeignKey:ForeignKeyWidget
                        }
 
-    def __init__(self, parent=None, model_instance=None, **kwargs):
+    def __init__(self, parent=None, model_instance=None, filter=None,**kwargs):
         QDialog.__init__(self, parent, **kwargs)
         BaseView.__init__(self, **kwargs)
         if model_instance is None:
@@ -68,21 +73,41 @@ class DetailView(QDialog, BaseView):
         Qt.QObject.connect(buttonBox, Qt.SIGNAL("rejected()"), self, Qt.SLOT("reject()"));
         self.formlayout.addRow(buttonBox)
         self.setLayout(self.formlayout)
+        self.set_filter(filter)
+
     def get_data_from_model(self):
+        print self.model_instance.__dict__
         for field in self.fields:
-            print getattr(self.model_instance,field)
             self._widgets[field].setData(getattr(self.model_instance,field))
 
+    def set_filter(self, filter):
+        if filter is not None:
+            for field, w in self._widgets.items():
+                if isinstance(w, ForeignKeyWidget):
+                    try:
+                        if isinstance(filter[field], w.model):
+                            w.setData(filter[field])
+                            w.setEnabled(False)
+                        else:
+                            for ffieldname, ffiltervalue in filter:
+                                wid_filter = {}
+                                if ffieldname in w.model.get_fields():
+                                    wid_filter[ffieldname] = ffiltervalue
+                                w.set_filter(wid_filter)
+                    except KeyError:
+                        pass
 
     def set_data_to_model(self):
         changed = False
         for field in self.fields:
             x = self.model.get_fields()[field]
-            newvalue = x.dump(self._widgets[field].getData())
+            newvalue = self._widgets[field].getData()
             if newvalue!=getattr(self.model_instance, field):
                 setattr(self.model_instance, field, newvalue)
                 changed = True
         if changed:
+            print "after change --------"
+            print self.model_instance.__dict__
             self.model_instance.save()
 
     def accept(self):
@@ -141,11 +166,12 @@ class AbstactQtModelUndetailView(UndetailView, QAbstractItemView):
         UndetailView.set_filter(self, filter)
         self.qtmodel.set_filter(self.filter)
 
-    def create_detail_view(self, model_to_edit=None):
+    def create_detail_view(self, model_to_edit=None, filter=None):
 
         #t = type(self.model.__name__.upper() + "DetailView",\
                  #(DetailView,), {"model":model_to_edit})
-        return self.detail_view(parent=self, model_instance=model_to_edit)
+        return self.detail_view(parent=self, model_instance=model_to_edit,\
+                                filter=filter)
 
     @QtCore.pyqtSlot()
     def currentChanged (self, mi1, mi2):
@@ -160,8 +186,11 @@ class AbstactQtModelUndetailView(UndetailView, QAbstractItemView):
         print "hi"
 
     def model_new (self):
-        dv = self.create_detail_view()
+        dv = self.create_detail_view(filter=self.filter)
         dv.show()
+
+    def refresh(self):
+        self.qtmodel.reset()
 
 class ListView(QListView, AbstactQtModelUndetailView):
     _qt_model_class = ListModel

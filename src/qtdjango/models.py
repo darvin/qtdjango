@@ -46,9 +46,11 @@ class IdField(Field):
 class TextField(Field):
     pass
 
+from datetime import datetime
 class DateField(Field):
-    pass
-
+    def load(self, data):
+        """docstring for load"""
+        return datetime.strptime(data, "%Y-%m-%d")
 class DateTimeField(DateField):
     pass
 
@@ -122,7 +124,7 @@ class Model(object):
     loaded = False
 
     objects = []
-
+    views = []
 
     @classmethod
     def load(cls):
@@ -166,14 +168,12 @@ class Model(object):
     @classmethod
     def filter(cls, **kwargs):
         return [x for x in cls.objects if x.is_filtered(**kwargs)]
-                                                        
     
     @classmethod
     def get(cls, id):
         res = cls.filter(id=id)
         if len(res)==1:
             return res[0]
-            
 #    def foreign_set(self, setname):
 #        try:
 #            fclass = "foreing_key_model_"+setname
@@ -183,7 +183,6 @@ class Model(object):
 #            pass 
 #        return fclass.filter(\
 #                    **{self.__class__.__name__.lower():self})
-    
     @classmethod
     def get_fields(cls):
         """
@@ -195,7 +194,6 @@ class Model(object):
                 f[fieldname] = getattr(cls, fieldname)
         return f
 
-    
     def is_filtered(self, **kwargs):
         for field in kwargs:
             try:
@@ -213,8 +211,6 @@ class Model(object):
     
     def __init__(self, **initdict):
         super(Model,self).__init__()
-        
-        
         for fieldname, field in self.__class__.get_fields().items():
             try:
                 setattr(self, fieldname, field.load(initdict[fieldname]))
@@ -223,17 +219,26 @@ class Model(object):
 
 
     def validate(self):
-        pass
+        return True
+
+    @classmethod
+    def notify(cls):
+        for v in cls.views:
+            v.refresh()
 
     def save(self):
-        self.validate()
-        
-        dubl = self.get(self.id)
-        
-        if dubl is None:
-            self.objects.append(self)
-        self.undumped = True
-    
+        if self.validate():
+            dubl = self.get(self.id)
+            if dubl is None:
+                self.objects.append(self)
+            self.undumped = True
+            self.notify()
+
+    @classmethod
+    def add_notify(cls, view):
+        """docstring for add_notify"""
+        cls.views.append(view)
+
     def __unicode__(self):
         return "default unicode method"
 

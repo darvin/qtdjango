@@ -25,8 +25,18 @@ class AbstractModel(QtCore.QAbstractTableModel):
     def get_qtdjango_model_by_index(self, index):
         data = self.filtered_model()
         if not index.isValid():
+            print index.row()
             return QtCore.QVariant()
         return data[index.row()]
+
+    def get_qtdjango_model_by_int_index(self, index):
+        data = self.filtered_model()
+        return data[index]
+
+    def get_index_of_model(self, model):
+        data = self.filtered_model()
+        return data.index(model)
+
 
 
     def rowCount(self, parent):
