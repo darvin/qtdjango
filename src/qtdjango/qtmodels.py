@@ -37,7 +37,13 @@ class AbstractModel(QtCore.QAbstractTableModel):
         data = self.filtered_model()
         return data.index(model)
 
-
+    def get_decorate_undumped_font(self, model_instance):
+        if model_instance.is_dumped():
+            return QtCore.QVariant()
+        else:
+            f = QFont()
+            f.setItalic(True)
+            return f
 
     def rowCount(self, parent):
         return len(self.filtered_model())
@@ -57,26 +63,22 @@ class TableModel(AbstractModel):
         return len(self.fields)
 
 
-    def headerData(self, section, orientation, role):
-        if role != QtCore.Qt.DisplayRole:
-            return QtCore.QVariant()
-        elif orientation == QtCore.Qt.Vertical:
-            return QtCore.QVariant()
-        elif orientation == QtCore.Qt.Horizontal:
-            return QtCore.QString.fromUtf8(self.model.get_fields()[self.fields[section]].get_label())
-
 
     def data(self, index, role):
 
         if not index.isValid():
             return QtCore.QVariant()
-        elif role != QtCore.Qt.DisplayRole:
+
+        model_instance = self.get_qtdjango_model_by_index(index)
+
+        if role==QtCore.Qt.FontRole:
+            return self.get_decorate_undumped_font(model_instance)
+        elif role==QtCore.Qt.DisplayRole:
+            field_raw_data = getattr(model_instance,self.fields[index.column()])
+            result = self.model.get_fields()[self.fields[index.column()]].dump(field_raw_data)
+            return QtCore.QVariant(result)
+        else:
             return QtCore.QVariant()
-
-
-        field_raw_data = getattr(self.get_qtdjango_model_by_index(index),self.fields[index.column()])
-        result = self.model.get_fields()[self.fields[index.column()]].dump(field_raw_data)
-        return QtCore.QVariant(result)
 
 
 class ListModel(AbstractModel):

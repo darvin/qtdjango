@@ -133,8 +133,11 @@ class Model(object):
                 raise ResourceNameError
             cls.id = IdField("Id")
             raw = Connection.get(cls.resource_name)
-
-            cls.objects = [cls(**x) for x in raw]
+            cls.objects = []
+            for x in raw:
+                o = cls(**x)
+                o.__dumped=True
+                cls.objects.append(o)
             cls.loaded = True
 #    #Fixme
     @classmethod
@@ -160,11 +163,13 @@ class Model(object):
     @classmethod  
     def all(cls):
         return cls.filter()
-    
+
     @classmethod    
     def new(cls, **kwargs):
-        return cls(**kwargs)
-    
+        o = cls(**kwargs)
+        o.__dumped = False
+        return o
+
     @classmethod
     def filter(cls, **kwargs):
         return [x for x in cls.objects if x.is_filtered(**kwargs)]
@@ -208,7 +213,10 @@ class Model(object):
                     print field
                     raise KeyError
         return True
-    
+
+    def is_dumped(self):
+        return self.__dumped
+
     def __init__(self, **initdict):
         super(Model,self).__init__()
         for fieldname, field in self.__class__.get_fields().items():
@@ -223,7 +231,9 @@ class Model(object):
 
     @classmethod
     def notify(cls):
+        print "notify, ", cls
         for v in cls.views:
+            print v
             v.refresh()
 
     def save(self):
