@@ -5,6 +5,10 @@
 @author: darvin
 '''
 
+
+
+
+
 from inspect import getmro
 
 
@@ -106,10 +110,6 @@ class ForeignKey(Field):
 
 
 
-
-from connection import Connection
-
-
 class ResourceNameError(Exception):
     pass
 
@@ -119,11 +119,18 @@ class Model(object):
     classdocs
     '''
     resource_name = None
-    """this is table of resource names of models"""
+    """@cvar: This is resource name of model"""
     
     loaded = False
+    """@cvar: This is flag, is model loaded"""
+
+    __models_manager = None
+    """@cvar: This is ModelManager object, throuth that model
+    works with remote Django server"""
 
     objects = []
+    """@cvar: This is list of Model instances of this model"""
+
     views = []
 
     @classmethod
@@ -132,7 +139,7 @@ class Model(object):
             if cls.resource_name is None:
                 raise ResourceNameError
             cls.id = IdField("Id")
-            raw = Connection.get(cls.resource_name)
+            raw = cls.__models_manager.get_resource_from_server(cls.resource_name)
             cls.objects = []
             for x in raw:
                 o = cls(**x)
@@ -148,13 +155,13 @@ class Model(object):
                     if not istype(getattr(obj, fieldname), "Model"):
                         setattr(obj, fieldname, getattr(cls, fieldname).load(getattr(obj, fieldname)))
 
-    #@classmethod
-    #def printall_foreing_keys(cls):
-        #for obj in cls.objects:
-            #for fieldname in dir(cls):
-                #if isinstance(getattr(cls,fieldname), ForeignKey):
-                    #print getattr(cls, fieldname).model
-                    #print getattr(obj, fieldname)
+    @classmethod
+    def set_models_manager(cls, models_manager):
+        """
+        Sets ModelsManager for Model class
+        @param models_manager: ModelsManager object
+        """
+        cls.__models_manager = models_manager
 
     @classmethod
     def dump(cls):
@@ -217,6 +224,17 @@ class Model(object):
     def is_dumped(self):
         return self.__dumped
 
+    @classmethod
+    def is_all_dumped(cls):
+        """
+        Returns True if all Model instances is dumped to server
+        (there is not unsaved objects)
+        """
+        for obj in self.objects:
+            if not obj.is_dumped():
+                return False
+        return True
+
     def __init__(self, **initdict):
         super(Model,self).__init__()
         for fieldname, field in self.__class__.get_fields().items():
@@ -237,11 +255,14 @@ class Model(object):
             v.refresh()
 
     def save(self):
+        """
+        Saves object
+        """
         if self.validate():
             dubl = self.get(self.id)
             if dubl is None:
                 self.objects.append(self)
-            self.undumped = True
+            self.__dumped = False
             self.notify()
 
     @classmethod

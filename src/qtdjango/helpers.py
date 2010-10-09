@@ -47,19 +47,4 @@ def get_all_models(app_list, from_django=False, exclude_model_names=("",)):
     user_class.resource_name=r"django/users/"
     return models
 
-
-def get_registered_models(path_to_django_project, app_list,
-                          exclude_model_names=None):
-    import sys
-    sys.path.append(path_to_django_project)
-
-    ms = get_all_models(app_list, from_django=False,\
-                        exclude_model_names=exclude_model_names)
-    for model in ms:
-        model.load()
-    
-    for model in ms:
-        model.refresh_foreing_keys()
-        #model.printall_foreing_keys()
-    return ms
     
