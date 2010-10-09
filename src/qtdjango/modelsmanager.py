@@ -1,11 +1,9 @@
 
 from restclient.restful_lib import Connection
 import json
+import sys
 from helpers import get_all_models
 
-
-
-import sys
 
 class ModelsManager(object):
     """
@@ -27,8 +25,8 @@ class ModelsManager(object):
         self.__connection = Connection(server)
         self.models = self.__get_registered_models(path_to_django_project,\
                 app_list, exclude_model_names)
-        self.notify_saved = []
-        """@ivar notify_saved: list of functions, that calls when all saved"""
+        self.notify_dumped = []
+        """@ivar notify_dumped: list of functions, that calls when all saved"""
 
         for m in self.models:
             m.set_models_manager(self)
@@ -37,20 +35,20 @@ class ModelsManager(object):
         for model in self.models:
             model.refresh_foreing_keys()
 
-
-    def __get_registered_models(self, path_to_django_project, app_list,
-                              exclude_model_names=None):
+    def add_notify_dumped(self, function):
         """
-        Gets models from django project by parametres,
-        @rtype: list of Models
+        Adds function to notify when models dumps list
         """
-        sys.path.append(path_to_django_project)
+        self.notify_dumped.append(function)
 
-        ms = get_all_models(app_list, from_django=False,\
-                            exclude_model_names=exclude_model_names)
-
-        return ms
-
+    def dump(self):
+        """
+        Dump all models to server. Notify all functions about it
+        """
+        for model in self.models:
+            model.dump()
+        for func in self.notify_dumped:
+            func()
 
     def is_all_dumped(self):
         """
@@ -79,4 +77,19 @@ class ModelsManager(object):
         """
         for model in self.models:
             setattr(module, model.__name__, model)
+
+    def __get_registered_models(self, path_to_django_project, app_list,
+                              exclude_model_names=None):
+        """
+        Gets models from django project by parametres,
+        @rtype: list of Models
+        """
+        sys.path.append(path_to_django_project)
+
+        ms = get_all_models(app_list, from_django=False,\
+                            exclude_model_names=exclude_model_names)
+
+        return ms
+
+
 
