@@ -9,10 +9,11 @@ from piston.handler import BaseHandler
 from helpers import get_resource_name_for_model, get_all_models
 
 
+
 class CollectionHandler(BaseHandler):
     exclude = ()
     allowed_methods = ('GET',)
-    
+
     def read(self, request,  *args, **kwargs):
         filterargs = {}
         for arg in request.GET:

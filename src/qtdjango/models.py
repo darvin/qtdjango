@@ -93,17 +93,13 @@ class ForeignKey(Field):
                 return data
         else:
             return None
-        
-    
     def dump(self, data):
         return unicode(data)
-    
+
     def __init__(self, model, verbose_name=None, *args, **kwargs):
         super(ForeignKey, self).__init__(verbose_name=verbose_name, *args, **kwargs)
         self.model = model
 #        self.model.load()
-        
-        
 #        self.model.__setattr__("foreing_key_model_"+kwargs["self"].__name__, kwargs["self"])
 
 
@@ -120,7 +116,7 @@ class Model(object):
     '''
     resource_name = None
     """@cvar: This is resource name of model"""
-    
+
     loaded = False
     """@cvar: This is flag, is model loaded"""
 
@@ -129,24 +125,30 @@ class Model(object):
     works with remote Django server"""
 
     objects = []
-    """@cvar: This is list of Model instances of this model"""
+    """@cvar: List of Model instances of this model"""
 
     views = []
+    """@cvar: List of views, connected to this model"""
 
     @classmethod
     def load(cls):
+        """Loads all model objects from server via ModelsManager.
+        Sets initial [] values for objects and views"""
         if not cls.loaded:
             if cls.resource_name is None:
                 raise ResourceNameError
             cls.id = IdField("Id")
             raw = cls.__models_manager.get_resource_from_server(cls.resource_name)
             cls.objects = []
+            cls.views = []
+            cls.max_negative_undumped_id = -1
+            """@cvar Current maximal undumped id"""
             for x in raw:
                 o = cls(**x)
                 o.__dumped=True
                 cls.objects.append(o)
             cls.loaded = True
-#    #Fixme
+    #FIXME
     @classmethod
     def refresh_foreing_keys(cls):
         for obj in cls.objects:
@@ -166,21 +168,33 @@ class Model(object):
     @classmethod
     def dump(cls):
         raise NonImplementedError
-    
-    @classmethod  
+
+    @classmethod
     def all(cls):
         return cls.filter()
 
-    @classmethod    
+    @classmethod
     def new(cls, **kwargs):
+        """Used only from user code. Returns new model instance"""
         o = cls(**kwargs)
         o.__dumped = False
+        o.id = cls.max_negative_undumped_id
+        cls.max_negative_undumped_id-=1
         return o
+
+    @classmethod
+    def verbose_name(cls, plural=False):
+        """Returns verbose name of model
+        @param plural: return plural verbose name"""
+        if plural:
+            return cls.Meta.verbose_name_plural
+        else:
+            return cls.Meta.verbose_name
 
     @classmethod
     def filter(cls, **kwargs):
         return [x for x in cls.objects if x.is_filtered(**kwargs)]
-    
+
     @classmethod
     def get(cls, id):
         res = cls.filter(id=id)
@@ -209,8 +223,12 @@ class Model(object):
     def is_filtered(self, **kwargs):
         for field in kwargs:
             try:
-                if getattr(self, field)!=kwargs[field]:
-                    return False
+                try:
+                    if not getattr(self, field) in kwargs[field]:
+                        return False
+                except TypeError:
+                    if not getattr(self, field)==kwargs[field]:
+                        return False
             except KeyError:
                 if "__" in field:
                     keymodel, keyfield = field.split("__")
@@ -249,9 +267,8 @@ class Model(object):
 
     @classmethod
     def notify(cls):
-        print "notify, ", cls
+        """Sends notify to all views, connected to model"""
         for v in cls.views:
-            print v
             v.refresh()
 
     def save(self):
