@@ -13,6 +13,7 @@ from django.db import models
 
 class CollectionHandler(AnonymousBaseHandler):
     exclude = ()
+#    fields = ("machinemark",)
     allowed_methods = ('GET','POST')
     
     def has_model(self):
@@ -52,12 +53,23 @@ class CollectionHandler(AnonymousBaseHandler):
         except self.model.MultipleObjectsReturned:
             return rc.DUPLICATE_ENTRY
 
+def create_resource_type(model):
+    """Builds resource class from model
+    @param model: Model class"""
+    f = []
+    for field in model._meta.fields:
+        f.append(field.name)
+
+    for field in model._meta.many_to_many:
+        f.append(field.name)
+    res = Resource(type(model.__name__+"Handler", (CollectionHandler,),\
+                        {"model":model, "fields":f}))
+    return res
 def get_url_pattens(app_list):
     """Gets app list returns urls patterns"""
     models = get_all_models(app_list, from_django=True)
     urlpatterns = [url(r"^"+get_resource_name_for_model(model),\
-            Resource(type(model.__name__+"Handler", (CollectionHandler,), {"model":model})
-                     )) for model in models]
+            create_resource_type(model)) for model in models]
  
 
     return patterns("", * urlpatterns)

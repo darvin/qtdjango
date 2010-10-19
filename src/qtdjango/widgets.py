@@ -8,11 +8,12 @@ from qtmodels import ListModel
 from models import *
 from PyQt4.QtGui import *
 from PyQt4 import QtCore, Qt
+from PyQt4.QtCore import QDateTime
 
 
 class Widget(object):
-    def __init__(self):
-        pass
+#    def __init__(self):
+#        pass
 
         
     def getData(self):
@@ -58,17 +59,30 @@ class ForeignKeyWidget(QComboBox, Widget):
 
 
 class SpinBoxWidget(QSpinBox, Widget):
-    def __init__(self):
-        Widget.__init__(self)
-        QSpinBox.__init__(self)
-        
     def getData(self):
-        return self.value
+        return self.value()
     
     def setData(self, data):
         if data is not None:
-            self.value = data
+            self.setValue = data
 
+class DateTimeEditWidget(QDateTimeEdit, Widget):
+    def getData(self):
+        return self.dateTime().toPyDateTime()
+
+    def setData(self, data):
+        if data is not None:
+            self.setDateTime(data)
+        else:
+            self.setDateTime(QDateTime.currentDateTime())
+
+class CheckBoxWidget(QCheckBox, Widget):
+    def getData(self):
+        return self.isChecked()
+    def setData(self, data):
+        if data is None:
+            data = False
+        self.stateChanged.emit(data)
 
 class ComboBoxWidget(QComboBox, Widget):
     def __init__(self):

@@ -11,10 +11,13 @@ class UndetailView(BaseView):
         self.filter = filter
 
     def set_filter(self, filter):
+        """Sets filter. Filter is dict"""
         self.filter = filter
 
 
-class UndetailWithButtonsView(QFrame):
+
+class UndetailWithButtonsView(QFrame, UndetailView):
+    """Proxy class for UndetailView with buttons"""
     edit_dumped = True
     """@cvar: Allows edit and delete entries on server"""
     viewclass = None
@@ -26,10 +29,14 @@ class UndetailWithButtonsView(QFrame):
               }
     """@cvar: Buttons
     'name': (undumped only, 'caption'),"""
-    def __init__(self, *args, **kwargs):
+
+    edit_filtered_only = False
+    """@cvar: allow edit only if view is filtered"""
+
+    def __init__(self, filter=None, *args, **kwargs):
         """docstring for __init__"""
         QFrame.__init__(self)
-        self.view = self.viewclass(*args, **kwargs)
+        self.view = self.viewclass()
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
         self.layout.addWidget(self.view)
@@ -49,14 +56,37 @@ class UndetailWithButtonsView(QFrame):
         self._buttons["new"].clicked.connect(lambda x: self.view.model_new())
         self.view.modelSelectionChanged.connect(self.modelSelectionChange)
 
-    @QtCore.pyqtSlot(Model)
-    def modelSelectionChange(self, model):
+        self.refresh_buttons_state()
+        self.set_filter(filter)
+
+
+    def refresh_buttons_state(self, model=None):
+        """Disables buttons for edit, if not edit allowed"""
         if not self.edit_dumped:
-            print model.is_dumped()
             for button, (undumped_only, buttonname) in self.buttons.items():
                 if undumped_only:
-                    self._buttons[button].setDisabled(model.is_dumped())
+                    try:
+                        self._buttons[button].setDisabled(model.is_dumped())
+                    except AttributeError:
+                        self._buttons[button].setDisabled(True)
+                else:
+                    self._buttons[button].setDisabled(False)
 
+    @QtCore.pyqtSlot(Model)
+    def modelSelectionChange(self, model):
+        self.refresh_buttons_state(model)
+
+    def set_filter(self, filter):
+        """Sets filter. Filter is dict"""
+        self.view.set_filter(filter)
+        if self.edit_filtered_only and filter is None:
+            for button, (undumped_only, buttonname) in self.buttons.items():
+                self._buttons[button].setDisabled(True)
+        else:
+            self.refresh_buttons_state()
+
+    def save(self):
+        self.view.save()
 
 
 
@@ -100,6 +130,10 @@ class AbstactQtModelUndetailView(UndetailView, QAbstractItemView):
     def refresh(self):
         self.qtmodel.reset()
 
+    def save(self):
+        """Does nothing, all changes saves instantly"""
+        pass
+
 class ListView(QListView, AbstactQtModelUndetailView):
     _qt_model_class = ListModel
     modelSelectionChanged = QtCore.pyqtSignal([Model]) ##dont work when in
@@ -126,6 +160,8 @@ class TreeView(QTreeView, AbstactQtModelUndetailView):
     _qt_model_class = TreeModel
     modelSelectionChanged = QtCore.pyqtSignal([Model]) ##dont work when in
                                                         #father class
+
+    modelSelectionCleared = QtCore.pyqtSignal()
     tree_structure = {}
     """@cvar: Dict of tree structure {fk field name: model class}"""
 

@@ -10,7 +10,7 @@
 
 
 from inspect import getmro
-
+import json
 
 
 def istype(obj, typename):
@@ -27,11 +27,14 @@ class Field(object):
         except IndexError:
             pass
 
-    def load(self, data):
+    def from_raw(self, data):
         return data
 
-    def dump(self, data):
+    def to_raw(self, data):
         return data
+
+    def to_text(self, data):
+        return unicode(data)
 
     def blank(self):
         return None
@@ -52,9 +55,14 @@ class TextField(Field):
 
 from datetime import datetime
 class DateField(Field):
-    def load(self, data):
-        """docstring for load"""
-        return datetime.strptime(data, "%Y-%m-%d")
+    def from_raw(self, data):
+        try:
+            return datetime.strptime(data, "%Y-%m-%d")
+        except ValueError:
+            return datetime.strptime(data, "%Y-%m-%d %H:%M:%S")
+    def to_raw(self, data):
+        return data.strftime("%Y-%m-%d")
+
 class DateTimeField(DateField):
     pass
 
@@ -65,27 +73,40 @@ class CharField(Field):
 
 class BooleanField(Field):
     pass
+    def to_raw(self, data):
+        return data
 
 class EmailField(CharField):
     pass
+    def to_raw(self, data):
+        raise NotImplementedError
 
 
 class FileField(CharField):
     pass
+    def to_raw(self, data):
+        raise NotImplementedError
 
 class IntegerField(Field):
-    def load(self, data):
-        return int(data)
+    def from_raw(self, data):
+        if data is not None:
+            return int(data)
+        else:
+            return None
 
-    def dump(self, data):
-        return int(data)
+    def to_raw(self, data):
+        if data is not None:
+            return int(data)
+        else:
+            return None
+
 
 class PositiveIntegerField(IntegerField):
     pass
 
 class ForeignKey(Field):
 
-    def load(self, data):
+    def from_raw(self, data):
         if data is not None:
             if self.model.loaded:
                 return self.model.get(data["id"])
@@ -93,8 +114,11 @@ class ForeignKey(Field):
                 return data
         else:
             return None
-    def dump(self, data):
+    def to_text(self, data):
         return unicode(data)
+
+    def to_raw(self, data):
+        return data.id
 
     def __init__(self, model, verbose_name=None, *args, **kwargs):
         super(ForeignKey, self).__init__(verbose_name=verbose_name, *args, **kwargs)
@@ -103,6 +127,28 @@ class ForeignKey(Field):
 #        self.model.__setattr__("foreing_key_model_"+kwargs["self"].__name__, kwargs["self"])
 
 
+
+class ManyToManyField(ForeignKey):
+    def from_raw(self, data):
+
+        if data is not None:
+            if self.model.loaded:
+                try:
+                    res = []
+                    for item in data:
+                        res.append(self.model.get(item["id"]))
+                    return res
+                except TypeError:
+                    return data
+            else:
+                return data
+        else:
+            return None
+    def to_text(self, data):
+            return unicode(data)
+
+    def to_raw(self, data):
+        raise NotImplementedError
 
 
 
@@ -130,6 +176,10 @@ class Model(object):
     views = []
     """@cvar: List of views, connected to this model"""
 
+    exclude_methods = ("save",)
+    """@cvar: List of methods of models, that must be subtitude by Model class methods"""
+
+
     @classmethod
     def load(cls):
         """Loads all model objects from server via ModelsManager.
@@ -155,19 +205,46 @@ class Model(object):
             for fieldname in dir(cls):
                 if isinstance(getattr(cls,fieldname), ForeignKey):
                     if not istype(getattr(obj, fieldname), "Model"):
-                        setattr(obj, fieldname, getattr(cls, fieldname).load(getattr(obj, fieldname)))
+                        setattr(obj, fieldname,\
+                                getattr(cls, fieldname).from_raw(getattr(obj, fieldname)))
 
     @classmethod
-    def set_models_manager(cls, models_manager):
+    def init_model_class(cls, models_manager):
         """
-        Sets ModelsManager for Model class
+        Inits model class, sets ModelsManager for Model class
         @param models_manager: ModelsManager object
         """
         cls.__models_manager = models_manager
+        for method in cls.exclude_methods:
+            setattr(cls, method, getattr(Model, method))
 
     @classmethod
     def dump(cls):
-        raise NonImplementedError
+        if cls.resource_name is None:
+                raise ResourceNameError
+        else:
+            for o in cls.objects:
+                if not o.is_dumped():
+                    r = o.to_raw()
+                    resp = cls.__models_manager.post_resource_to_server(cls.resource_name, args=r)
+                    from pprint import pprint
+                    if resp["headers"]["status"]=="200":
+                        body = json.loads(resp["body"])
+                        cls.objects.remove(o)
+                        del o
+                        newo = cls(**body)
+                        newo.__dumped=True
+                        cls.objects.append(newo)
+
+            cls.notify()
+
+    def to_raw(self):
+        """Returns raw model instance representation"""
+        d = {}
+        for fieldname, field in self.__class__.get_fields().items():
+            if fieldname!="id":
+                d[fieldname]=unicode(field.to_raw(getattr(self, fieldname))).encode('utf-8')
+        return d
 
     @classmethod
     def all(cls):
@@ -235,7 +312,7 @@ class Model(object):
                     if getattr(getattr(self,keymodel),keyfield)!=kwargs[field]:
                         return False
                 else:
-                    print field
+#                    print field
                     raise KeyError
         return True
 
@@ -248,16 +325,17 @@ class Model(object):
         Returns True if all Model instances is dumped to server
         (there is not unsaved objects)
         """
-        for obj in self.objects:
+        for obj in cls.objects:
             if not obj.is_dumped():
                 return False
         return True
 
     def __init__(self, **initdict):
         super(Model,self).__init__()
+#        print initdict
         for fieldname, field in self.__class__.get_fields().items():
             try:
-                setattr(self, fieldname, field.load(initdict[fieldname]))
+                setattr(self, fieldname, field.from_raw(initdict[fieldname]))
             except KeyError:
                 setattr(self, fieldname, field.blank())
 
@@ -270,6 +348,8 @@ class Model(object):
         """Sends notify to all views, connected to model"""
         for v in cls.views:
             v.refresh()
+        if not cls.is_all_dumped():
+            cls.__models_manager.notify_changes()
 
     def save(self):
         """

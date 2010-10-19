@@ -28,8 +28,12 @@ class ModelsManager(object):
         self.notify_dumped = []
         """@ivar notify_dumped: list of functions, that calls when all saved"""
 
+        self.notify_undumped = []
+        """@ivar notify_undumped: list of functions, that calls when changes"""
+
+
         for m in self.models:
-            m.set_models_manager(self)
+            m.init_model_class(models_manager=self)
         for model in self.models:
             model.load()
         for model in self.models:
@@ -40,6 +44,19 @@ class ModelsManager(object):
         Adds function to notify when models dumps list
         """
         self.notify_dumped.append(function)
+
+    def add_notify_undumped(self, function):
+        """
+        Adds function to notify when models become have changes
+        """
+        self.notify_undumped.append(function)
+
+    def notify_changes(self):
+        """
+        Notify changes in models
+        """
+        for func in self.notify_undumped:
+            func()
 
     def dump(self):
         """
@@ -68,6 +85,16 @@ class ModelsManager(object):
         """
         res = self.__connection.request_get("%s%s" % (self.url,resource_name))["body"]
         return json.loads(res)
+
+    def post_resource_to_server(self, resource_name, args):
+        """
+        Posts to remote Django server
+        @param resource_name: name of piston resource
+        @param body: body of post request
+        @rtype: dict
+        """
+        res = self.__connection.request_post("%s%s" % (self.url,resource_name),args=args)
+        return res
 
     def do_models_magic_with_module(self, module):
         """

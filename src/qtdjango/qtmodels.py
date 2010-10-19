@@ -88,7 +88,8 @@ class TableModel(AbstractModel):
                 return model_instance.__unicode__()
             else:
                 field_raw_data = getattr(model_instance,self.fields[index.column()])
-                result = self.model.get_fields()[self.fields[index.column()]].dump(field_raw_data)
+                result = self.model.get_fields()\
+                        [self.fields[index.column()]].to_text(field_raw_data)
                 return QtCore.QVariant(result)
         else:
             return QtCore.QVariant()

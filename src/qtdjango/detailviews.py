@@ -9,8 +9,14 @@ class DetailView(QDialog, BaseView):
                          IdField:IdLabelWidget,
                        CharField:LineEditWidget,
                        IntegerField:SpinBoxWidget,
-                       ForeignKey:ForeignKeyWidget
+                       ForeignKey:ForeignKeyWidget,
+                       DateTimeField:DateTimeEditWidget,
+                       DateField:DateTimeEditWidget,
+                       BooleanField:CheckBoxWidget,
                        }
+
+    inline_views = ()
+    """@cvar: Tuple of inline views. ((InlineViewClass, "filter_field", "Caption"),)"""
 
     def __init__(self, parent=None, model_instance=None, filter=None,**kwargs):
         QDialog.__init__(self, parent, **kwargs)
@@ -38,6 +44,17 @@ class DetailView(QDialog, BaseView):
                     self._widgets[field] = LabelWidget() ##FIXME!
             self.formlayout.addRow(QtCore.QString.fromUtf8(x.get_label()), self._widgets[field])
         self.get_data_from_model()
+
+        #then initialise inline views:
+        self._inline_views = []
+        for inline_view_class, inline_filter_field, inline_caption in self.inline_views:
+            v = inline_view_class(filter={inline_filter_field:self.model_instance})
+            #v.set_filter({inline_filter_field:self.model_instance})
+            self._inline_views.append(v)
+            self.formlayout.addRow(QLabel(inline_caption))
+            self.formlayout.addRow(v)
+
+
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok
                                       | QDialogButtonBox.Cancel)
         Qt.QObject.connect(buttonBox, Qt.SIGNAL("accepted()"), self, Qt.SLOT("accept()"));
@@ -46,8 +63,9 @@ class DetailView(QDialog, BaseView):
         self.setLayout(self.formlayout)
         self.set_filter(filter)
 
+
+
     def get_data_from_model(self):
-        print self.model_instance.__dict__
         for field in self.fields:
             self._widgets[field].setData(getattr(self.model_instance,field))
 
@@ -77,9 +95,11 @@ class DetailView(QDialog, BaseView):
                 setattr(self.model_instance, field, newvalue)
                 changed = True
         if changed:
-            print "after change --------"
-            print self.model_instance.__dict__
             self.model_instance.save()
+
+        ##save inline views
+        for v in self._inline_views:
+            v.save()
 
     def accept(self):
         QDialog.accept(self)
