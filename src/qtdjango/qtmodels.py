@@ -48,13 +48,16 @@ class AbstractModel(QtCore.QAbstractTableModel):
         data = self.filtered_model()
         return data.index(model)
 
-    def get_decorate_undumped_font(self, model_instance):
+    def get_decorate_undumped(self, model_instance):
+        """Returns (FontRole, BackgroundRole, ForegroundRole) for model_instance"""
         if model_instance.is_dumped():
-            return QtCore.QVariant()
+            return (QtCore.QVariant(), QtCore.QVariant(), QtCore.QVariant())
         else:
-            f = QFont()
-            f.setItalic(True)
-            return f
+            font = QFont()
+            font.setItalic(True)
+            background = QColor(240, 128, 128)
+            foreground = QtCore.QVariant()
+            return (font, background, foreground)
 
     def rowCount(self, parent):
         return len(self.filtered_model())
@@ -75,14 +78,17 @@ class TableModel(AbstractModel):
 
 
     def data(self, index, role):
-
         if not index.isValid():
             return QtCore.QVariant()
 
         model_instance = self.get_qtdjango_model_by_index(index)
 
         if role==QtCore.Qt.FontRole:
-            return self.get_decorate_undumped_font(model_instance)
+            return self.get_decorate_undumped(model_instance)[0]
+        elif role==QtCore.Qt.BackgroundRole:
+            return self.get_decorate_undumped(model_instance)[1]
+        elif role==QtCore.Qt.ForegroundRole:
+            return self.get_decorate_undumped(model_instance)[2]
         elif role==QtCore.Qt.DisplayRole:
             if self._without_fields:
                 return model_instance.__unicode__()
