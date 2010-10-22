@@ -2,6 +2,7 @@
 from restclient.restful_lib import Connection
 import json
 import sys
+import os
 from helpers import get_all_models
 
 
@@ -111,7 +112,17 @@ class ModelsManager(object):
         Gets models from django project by parametres,
         @rtype: list of Models
         """
-        sys.path.append(path_to_django_project)
+        if os.path.exists(path_to_django_project):
+            path = path_to_django_project
+        else:
+            try:
+                p = __import__(path_to_django_project)
+                path = os.path.dirname(p.__file__)
+            except ImportError:
+                raise ImportError
+
+
+        sys.path.append(path)
 
         ms = get_all_models(app_list, from_django=False,\
                             exclude_model_names=exclude_model_names)
