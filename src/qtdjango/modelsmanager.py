@@ -106,6 +106,15 @@ class ModelsManager(object):
         for model in self.models:
             setattr(module, model.__name__, model)
 
+    def __getattr__(self, name):
+        try:
+            return super(ModelsManager,self).__getattr__(name)
+        except AttributeError:
+            for model in self.models:
+                if model.__name__==name:
+                    return model
+            raise AttributeError
+
     def __get_registered_models(self, path_to_django_project, app_list,
                               exclude_model_names=None):
         """
