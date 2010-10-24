@@ -59,6 +59,12 @@ class ForeignKeyWidget(QComboBox, Widget):
 
 
 class SpinBoxWidget(QSpinBox, Widget):
+    def __init__(self):
+        Widget.__init__(self)
+        QLabel.__init__(self)
+        self.setMinimum(0)
+        self.setMaximum(999999)
+
     def getData(self):
         return self.value()
     

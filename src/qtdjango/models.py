@@ -26,6 +26,7 @@ class Field(object):
             self.verbose_name = verbose_name
         except IndexError:
             pass
+        self.read_only = False
 
     def from_raw(self, data):
         return data
@@ -47,6 +48,10 @@ class Field(object):
 
 
 class IdField(Field):
+    def __init__(self, *args, **kwargs):
+        super(IdField, self).__init__(*args, **kwargs)
+        self.read_only = True
+
     def load(self, data):
         return int(data)
 
@@ -179,6 +184,10 @@ class Model(object):
     exclude_methods = ("save",)
     """@cvar: List of methods of models, that must be subtitude by Model class methods"""
 
+    read_only_fields = []
+    """@cvar: List of fields to read-only"""
+
+
 
     @classmethod
     def load(cls):
@@ -218,6 +227,9 @@ class Model(object):
         for method in cls.exclude_methods:
             setattr(cls, method, getattr(Model, method))
 
+        for field in cls.read_only_fields:
+            getattr(cls, field).read_only = True
+
     @classmethod
     def dump(cls):
         if cls.resource_name is None:
@@ -228,6 +240,7 @@ class Model(object):
                     r = o.to_raw()
                     resp = cls.__models_manager.post_resource_to_server(cls.resource_name, args=r)
                     from pprint import pprint
+                    pprint(resp)
                     if resp["headers"]["status"]=="200":
                         body = json.loads(resp["body"])
                         cls.objects.remove(o)
@@ -242,7 +255,7 @@ class Model(object):
         """Returns raw model instance representation"""
         d = {}
         for fieldname, field in self.__class__.get_fields().items():
-            if fieldname!="id":
+            if fieldname!="id" and not field.read_only:
                 d[fieldname]=unicode(field.to_raw(getattr(self, fieldname))).encode('utf-8')
         return d
 

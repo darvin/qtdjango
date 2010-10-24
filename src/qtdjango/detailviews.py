@@ -27,6 +27,8 @@ class DetailView(QDialog, BaseView):
             self.model_instance = model_instance
         self.formlayout = QFormLayout()
         self._widgets={}
+        self.fields = [field for field in self.fields\
+                       if not getattr(self.model,field).read_only]
         for field in self.fields:
             x = getattr(self.model,field)
             try:
@@ -39,7 +41,6 @@ class DetailView(QDialog, BaseView):
                     else:
                         self._widgets[field] = \
                             self.fieldwidgets_dict[x.__class__]()
-
                 except KeyError:
                     self._widgets[field] = LabelWidget() ##FIXME!
             self.formlayout.addRow(QtCore.QString.fromUtf8(x.get_label()), self._widgets[field])

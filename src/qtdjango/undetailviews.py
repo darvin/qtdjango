@@ -6,6 +6,10 @@ from qtmodels import *
 from models import Model
 
 class UndetailView(BaseView):
+
+    sort_by = None
+    """@cvar sort by column"""
+
     def __init__(self, filter=None):
         BaseView.__init__(self)
         self.filter = filter
@@ -97,7 +101,9 @@ class AbstactQtModelUndetailView(UndetailView, QAbstractItemView):
         QAbstractItemView.__init__(self)
         UndetailView.__init__(self, filter)
         self.qtmodel = self._qt_model_class(self.model, self.filter, self.fields)
-        self.setModel(self.qtmodel)
+        self.sortmodelproxy = QSortFilterProxyModel(parent=self)
+        self.sortmodelproxy.setSourceModel(self.qtmodel)
+        self.setModel(self.sortmodelproxy)
     def set_filter(self, filter):
         UndetailView.set_filter(self, filter)
         self.qtmodel.set_filter(self.filter)
@@ -152,6 +158,16 @@ class TableView(QTableView, AbstactQtModelUndetailView):
     def __init__(self, filter=None):
         QTableView.__init__(self)
         AbstactQtModelUndetailView.__init__(self, filter)
+        self.setSortingEnabled(True)
+        if self.sort_by:
+            if self.sort_by[0]=="-":
+                sort_order = QtCore.Qt.DescendingOrder
+                sort_by = self.sort_by[1:]
+            else:
+                sort_order = QtCore.Qt.AscendingOrder
+                sort_by = self.sort_by
+
+            self.sortByColumn(self.fields.index(sort_by), sort_order)
 
 
 
