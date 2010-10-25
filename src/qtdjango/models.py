@@ -252,6 +252,8 @@ class Model(object):
                         newo = cls(**body)
                         newo.__dumped=True
                         cls.objects.append(newo)
+                    elif resp["headers"]["status"]=="400":
+                        o.__valid = False
 
             cls.notify()
             return responces
@@ -342,7 +344,17 @@ class Model(object):
         return True
 
     def is_dumped(self):
+        """
+        Returns True if model instance was dumped to server or was fetched from server
+        """
         return self.__dumped
+
+    def is_valid(self):
+        """
+        Returns False if model instance failed validation
+        """
+        return self.__valid
+
 
     @classmethod
     def is_all_dumped(cls):
@@ -358,6 +370,8 @@ class Model(object):
     def __init__(self, **initdict):
         super(Model,self).__init__()
 #        print initdict
+        self.__valid = True
+        """@ivar __valid: False if model instance failed validation"""
         for fieldname, field in self.__class__.get_fields().items():
             try:
                 setattr(self, fieldname, field.from_raw(initdict[fieldname]))

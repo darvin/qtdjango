@@ -46,7 +46,7 @@ class ForeignKeyWidget(QComboBox, Widget):
         self.qtmodel.set_filter(filter)
 
     def getData(self):
-        return self.qtmodel.get_qtdjango_model_by_int_index(\
+        return self.qtmodel.get_model_instance_by_int_index(\
                 self.currentIndex())
 
     def setData(self, data):

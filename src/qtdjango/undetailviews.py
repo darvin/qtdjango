@@ -63,18 +63,31 @@ class UndetailWithButtonsView(QFrame, UndetailView):
         self.refresh_buttons_state()
         self.set_filter(filter)
 
+    def get_buttons_state(self, model_selected=None):
+        try:
+            model_selected_undumped = not model_selected.is_dumped()
+        except AttributeError:
+            model_selected_undumped = True
+
+        state = {}
+        for button, (undumped_only, buttonname) in self.buttons.items():
+            if self.edit_filtered_only and self.view.filter is None:
+                state[button] = False
+            else:
+                if not self.edit_dumped and undumped_only and \
+                   (not model_selected_undumped or model_selected is None):
+                    state[button] = False
+                else:
+                    state[button] = True
+
+        return state
+
 
     def refresh_buttons_state(self, model=None):
         """Disables buttons for edit, if not edit allowed"""
-        if not self.edit_dumped:
-            for button, (undumped_only, buttonname) in self.buttons.items():
-                if undumped_only:
-                    try:
-                        self._buttons[button].setDisabled(model.is_dumped())
-                    except AttributeError:
-                        self._buttons[button].setDisabled(True)
-                else:
-                    self._buttons[button].setDisabled(False)
+        current_state = self.get_buttons_state(model)
+        for button, (undumped_only, buttonname) in self.buttons.items():
+            self._buttons[button].setDisabled(not current_state[button])
 
     @QtCore.pyqtSlot(Model)
     def modelSelectionChange(self, model):
@@ -83,11 +96,7 @@ class UndetailWithButtonsView(QFrame, UndetailView):
     def set_filter(self, filter):
         """Sets filter. Filter is dict"""
         self.view.set_filter(filter)
-        if self.edit_filtered_only and filter is None:
-            for button, (undumped_only, buttonname) in self.buttons.items():
-                self._buttons[button].setDisabled(True)
-        else:
-            self.refresh_buttons_state()
+        self.refresh_buttons_state()
 
     def save(self):
         self.view.save()
@@ -117,12 +126,15 @@ class AbstactQtModelUndetailView(UndetailView, QAbstractItemView):
 
     @QtCore.pyqtSlot()
     def currentChanged (self, mi1, mi2):
-        self.modelSelectionChanged.emit( self.qtmodel.get_qtdjango_model_by_index(mi1))
+        self.modelSelectionChanged.emit( self.qtmodel.data(\
+                self.sortmodelproxy.mapToSource(mi1), QtCore.Qt.UserRole))
 
 
     def model_edit (self):
         dv = self.create_detail_view(\
-                    self.qtmodel.get_qtdjango_model_by_index(self.currentIndex()))
+                    self.qtmodel.data(\
+                            self.sortmodelproxy.mapToSource(self.currentIndex()),\
+                            QtCore.Qt.UserRole))
         dv.show()
 
     def model_delete (self):

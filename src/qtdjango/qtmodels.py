@@ -33,14 +33,15 @@ class AbstractModel(QtCore.QAbstractTableModel):
         else:
             return self.model.filter(**self.filter)
 
-    def get_qtdjango_model_by_index(self, index):
+    def get_model_instance_by_index(self, index):
         data = self.filtered_model()
         if not index.isValid():
             print index.row()
             return QtCore.QVariant()
+
         return data[index.row()]
 
-    def get_qtdjango_model_by_int_index(self, index):
+    def get_model_instance_by_int_index(self, index):
         data = self.filtered_model()
         return data[index]
 
@@ -48,14 +49,16 @@ class AbstractModel(QtCore.QAbstractTableModel):
         data = self.filtered_model()
         return data.index(model)
 
-    def get_decorate_undumped(self, model_instance):
+    def get_decorate(self, model_instance):
         """Returns (FontRole, BackgroundRole, ForegroundRole) for model_instance"""
-        if model_instance.is_dumped():
+        if model_instance.is_dumped() and model_instance.is_valid():
             return (QtCore.QVariant(), QtCore.QVariant(), QtCore.QVariant())
         else:
             font = QFont()
             font.setItalic(True)
             background = QColor(240, 128, 128)
+            if not model_instance.is_valid():
+                background = QColor("red")
             foreground = QtCore.QVariant()
             return (font, background, foreground)
 
@@ -81,14 +84,15 @@ class TableModel(AbstractModel):
         if not index.isValid():
             return QtCore.QVariant()
 
-        model_instance = self.get_qtdjango_model_by_index(index)
-
-        if role==QtCore.Qt.FontRole:
-            return self.get_decorate_undumped(model_instance)[0]
+        model_instance = self.get_model_instance_by_index(index)
+        if role==QtCore.Qt.UserRole:
+            return model_instance
+        elif role==QtCore.Qt.FontRole:
+            return self.get_decorate(model_instance)[0]
         elif role==QtCore.Qt.BackgroundRole:
-            return self.get_decorate_undumped(model_instance)[1]
+            return self.get_decorate(model_instance)[1]
         elif role==QtCore.Qt.ForegroundRole:
-            return self.get_decorate_undumped(model_instance)[2]
+            return self.get_decorate(model_instance)[2]
         elif role==QtCore.Qt.DisplayRole:
             if self._without_fields:
                 return model_instance.__unicode__()
@@ -109,13 +113,13 @@ class ListModel(AbstractModel):
 
         if not index.isValid():
             return QtCore.QVariant()
-        elif role != QtCore.Qt.DisplayRole:
-            return QtCore.QVariant()
-
-
-        result = self.get_qtdjango_model_by_index(index).__unicode__()
-        return QtCore.QVariant(result)
-
+        else:
+            model_instance = self.get_model_instance_by_index(index)
+            if role==QtCore.Qt.UserRole:
+                return model_instance
+            elif role == QtCore.Qt.DisplayRole:
+                return QtCore.QVariant(unicode(model_instance))
+        return QtCore.QVariant()
 
 class TreeModel(AbstractModel):
     def set_tree_structure(self, tree_structure):
@@ -155,13 +159,13 @@ class TreeModel(AbstractModel):
 
         if not index.isValid():
             return QtCore.QVariant()
-        elif role != QtCore.Qt.DisplayRole:
-            return QtCore.QVariant()
-
-
-        result = self.get_qtdjango_model_by_index(index).__unicode__()
-        return QtCore.QVariant(result)
-
+        else:
+            model_instance = self.get_model_instance_by_index(index)
+            if role==QtCore.Qt.UserRole:
+                return model_instance
+            elif role == QtCore.Qt.DisplayRole:
+                return QtCore.QVariant(unicode(model_instance))
+        return QtCore.QVariant()
 
 
 
