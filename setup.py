@@ -29,7 +29,7 @@ Usage (RPM-based linux distros):
 
 base_options = dict (name='qtdjango',
       install_requires = ["django", ],
-      version='1.2',
+      version='1.4',
       description='''Library for connection of PyQt application to Django server,
 also reusable app.''',
       author='Sergey Klimov',
