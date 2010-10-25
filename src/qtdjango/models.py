@@ -232,15 +232,19 @@ class Model(object):
 
     @classmethod
     def dump(cls):
+        """
+        Dumps all new model instances to server
+        @return: list of responces dict
+        """
         if cls.resource_name is None:
                 raise ResourceNameError
         else:
+            responces = []
             for o in cls.objects:
                 if not o.is_dumped():
                     r = o.to_raw()
                     resp = cls.__models_manager.post_resource_to_server(cls.resource_name, args=r)
-                    from pprint import pprint
-                    pprint(resp)
+                    responces.append(resp)
                     if resp["headers"]["status"]=="200":
                         body = json.loads(resp["body"])
                         cls.objects.remove(o)
@@ -250,6 +254,8 @@ class Model(object):
                         cls.objects.append(newo)
 
             cls.notify()
+            return responces
+
 
     def to_raw(self):
         """Returns raw model instance representation"""
@@ -277,9 +283,15 @@ class Model(object):
         """Returns verbose name of model
         @param plural: return plural verbose name"""
         if plural:
-            return cls.Meta.verbose_name_plural
+            try:
+                return cls.Meta.verbose_name_plural
+            except AttributeError:
+                return cls.__name__
         else:
-            return cls.Meta.verbose_name
+            try:
+                return cls.Meta.verbose_name
+            except AttributeError:
+                return cls.__name__+"s"
 
     @classmethod
     def filter(cls, **kwargs):

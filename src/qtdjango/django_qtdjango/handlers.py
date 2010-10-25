@@ -3,24 +3,20 @@
 This module must be imported from django enviroment
 '''
 
-from django.conf.urls.defaults import *
-from piston.resource import Resource
+
 from piston.handler import AnonymousBaseHandler
 from piston.utils import rc
-from helpers import get_resource_name_for_model, get_all_models
+from piston.utils import validate
 
-from django.db import models
+from forms import create_form_type
 
-class CollectionHandler(AnonymousBaseHandler):
+class MetaHandler(AnonymousBaseHandler):
     exclude = ()
 #    fields = ("machinemark",)
     allowed_methods = ('GET','POST')
     
     def has_model(self):
         return hasattr(self, 'model') or hasattr(self, 'queryset')
-
-
-
 
     def create(self, request, *args, **kwargs):
         if not self.has_model():
@@ -53,8 +49,9 @@ class CollectionHandler(AnonymousBaseHandler):
         except self.model.MultipleObjectsReturned:
             return rc.DUPLICATE_ENTRY
 
-def create_resource_type(model):
-    """Builds resource class from model
+
+def create_handler_type(model):
+    """Builds handler class from model
     @param model: Model class"""
     f = []
     for field in model._meta.fields:
@@ -62,14 +59,11 @@ def create_resource_type(model):
 
     for field in model._meta.many_to_many:
         f.append(field.name)
-    res = Resource(type(model.__name__+"Handler", (CollectionHandler,),\
-                        {"model":model, "fields":f}))
-    return res
-def get_url_pattens(app_list):
-    """Gets app list returns urls patterns"""
-    models = get_all_models(app_list, from_django=True)
-    urlpatterns = [url(r"^"+get_resource_name_for_model(model),\
-            create_resource_type(model)) for model in models]
- 
+    handler_type = type(model.__name__+"Handler", (MetaHandler,),\
+                        {"model":model, "fields":f})
+    valid_decor = validate(create_form_type(model))
+    handler_type.create = valid_decor(handler_type.create)
 
-    return patterns("", * urlpatterns)
+
+
+    return handler_type

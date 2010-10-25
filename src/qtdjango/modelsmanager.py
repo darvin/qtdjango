@@ -62,11 +62,13 @@ class ModelsManager(object):
     def dump(self):
         """
         Dump all models to server. Notify all functions about it
+        @return: responces dict of all models
         """
+        responces = {}
         for model in self.models:
-            model.dump()
+            responces[model.verbose_name(True)] = model.dump()
         for func in self.notify_dumped:
-            func()
+            func(responces)
 
     def is_all_dumped(self):
         """
