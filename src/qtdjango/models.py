@@ -109,7 +109,10 @@ class IntegerField(Field):
 class PositiveIntegerField(IntegerField):
     pass
 
-class ForeignKey(Field):
+class RelField(Field):
+    pass
+
+class ForeignKey(RelField):
 
     def from_raw(self, data):
         if data is not None:
@@ -256,11 +259,8 @@ class Model(object):
                     responces.append(resp)
                     if resp["headers"]["status"]=="200":
                         body = json.loads(resp["body"])
-                        cls.objects.remove(o)
-                        del o
-                        newo = cls(**body)
-                        newo.__dumped=True
-                        cls.objects.append(newo)
+                        o.__refresh(**body)
+                        o.__dumped=True
                     elif resp["headers"]["status"]=="400":
                         o.__valid = False
 
@@ -333,6 +333,46 @@ class Model(object):
                 f[fieldname] = getattr(cls, fieldname)
         return f
 
+    @classmethod
+    def get_rel_fields(cls):
+        """
+        Returns dict of relative (Foreign keys, etc) Fields
+        """
+        f = {}
+        for fieldname in dir(cls):
+            field = getattr(cls, fieldname)
+            try:
+                if RelField in getmro(field.__class__):
+                    f[fieldname] = getattr(cls, fieldname)
+            except AttributeError:
+                pass
+
+        return f
+
+
+
+    @staticmethod
+    def is_model_depend_on(one_class, other_class):
+        """
+        Returns True, if class has references to another class
+        """
+#        print one_class , "<=>" , other_class
+        for field in one_class.get_rel_fields().values():
+            if field.model==other_class:
+                print one_class , "depend on" , other_class
+                return 1
+        return -1
+
+    @staticmethod
+    def is_model_instance_depend_on(model_instance, other_model_instance):
+        """
+        Returns True, if model instance has references to another class
+        """
+        for fieldname, field in model_instance.get_rel_fields().items():
+            if getattr(model_instance, fieldname)==other_model_instance:
+                return 1
+        return -1
+
     def is_filtered(self, **kwargs):
         for field in kwargs:
             try:
@@ -354,7 +394,7 @@ class Model(object):
                         if getattr(getattr(getattr(self,keymodel),keyfield),keyfield2)!=kwargs[field]:
                             return False
                 else:
-#                    print field
+                    print field
                     raise KeyError
         return True
 
@@ -387,15 +427,16 @@ class Model(object):
 #        print initdict
         self.__valid = True
         """@ivar __valid: False if model instance failed validation"""
+        self.__refresh(**initdict)
+
+    def __refresh(self, **initdict):
+        self.__valid = True
         for fieldname, field in self.__class__.get_fields().items():
             try:
                 setattr(self, fieldname, field.from_raw(initdict[fieldname]))
             except KeyError:
                 setattr(self, fieldname, field.blank())
 
-
-    def validate(self):
-        return True
 
     @classmethod
     def notify(cls):
@@ -409,12 +450,11 @@ class Model(object):
         """
         Saves object
         """
-        if self.validate():
-            dubl = self.get(self.id)
-            if dubl is None:
-                self.objects.append(self)
-            self.__dumped = False
-            self.notify()
+        dubl = self.get(self.id)
+        if dubl is None:
+            self.objects.append(self)
+        self.__dumped = False
+        self.notify()
 
     @classmethod
     def add_notify(cls, view):

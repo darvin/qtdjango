@@ -4,6 +4,7 @@ import json
 import sys
 import os
 from helpers import get_all_models
+from qtdjango.models import Model
 
 
 class ModelsManager(object):
@@ -32,6 +33,9 @@ class ModelsManager(object):
         self.notify_undumped = []
         """@ivar notify_undumped: list of functions, that calls when changes"""
 
+        self.models.sort(cmp=Model.is_model_depend_on)
+#        from pprint import pprint
+#        pprint(self.models)
 
         for m in self.models:
             m.init_model_class(models_manager=self)
@@ -39,6 +43,8 @@ class ModelsManager(object):
             model.load()
         for model in self.models:
             model.refresh_foreing_keys()
+
+
 
     def add_notify_dumped(self, function):
         """
