@@ -173,6 +173,8 @@ class TableView(QTableView, AbstactQtModelUndetailView):
         QTableView.__init__(self)
         AbstactQtModelUndetailView.__init__(self, filter)
         self.setSortingEnabled(True)
+#        self.horizontalHeader().setResizeMode(QHeaderView.ResizeToContents)
+        self.verticalHeader().hide()
         if self.sort_by:
             if self.sort_by[0]=="-":
                 sort_order = QtCore.Qt.DescendingOrder

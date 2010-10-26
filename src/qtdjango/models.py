@@ -359,7 +359,7 @@ class Model(object):
 #        print one_class , "<=>" , other_class
         for field in one_class.get_rel_fields().values():
             if field.model==other_class:
-                print one_class , "depend on" , other_class
+#                print one_class , "depend on" , other_class
                 return 1
         return -1
 
