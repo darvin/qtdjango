@@ -123,7 +123,11 @@ class ForeignKey(Field):
         return unicode(data)
 
     def to_raw(self, data):
-        return data.id
+        try:
+            return data.id
+        except AttributeError:
+            return None
+
 
     def __init__(self, model, verbose_name=None, *args, **kwargs):
         super(ForeignKey, self).__init__(verbose_name=verbose_name, *args, **kwargs)
@@ -187,6 +191,8 @@ class Model(object):
     read_only_fields = []
     """@cvar: List of fields to read-only"""
 
+    include_methods_results = {}
+    """@cvar: Dict of methods to fetch from server"""
 
 
     @classmethod
@@ -227,7 +233,10 @@ class Model(object):
         for method in cls.exclude_methods:
             setattr(cls, method, getattr(Model, method))
 
-        for field in cls.read_only_fields:
+        for method in cls.include_methods_results:
+            setattr(cls, method, cls.include_methods_results[method])
+
+        for field in cls.read_only_fields+cls.include_methods_results.keys():
             getattr(cls, field).read_only = True
 
     @classmethod
@@ -263,7 +272,7 @@ class Model(object):
         """Returns raw model instance representation"""
         d = {}
         for fieldname, field in self.__class__.get_fields().items():
-            if fieldname!="id" and not field.read_only:
+            if fieldname!="id" and not field.read_only and getattr(self, fieldname) is not None:
                 d[fieldname]=unicode(field.to_raw(getattr(self, fieldname))).encode('utf-8')
         return d
 
@@ -333,11 +342,17 @@ class Model(object):
                 except TypeError:
                     if not getattr(self, field)==kwargs[field]:
                         return False
-            except KeyError:
+            except AttributeError:
+                #FIXME to any number of folding
                 if "__" in field:
-                    keymodel, keyfield = field.split("__")
-                    if getattr(getattr(self,keymodel),keyfield)!=kwargs[field]:
-                        return False
+                    try:
+                        keymodel, keyfield = field.split("__")
+                        if getattr(getattr(self,keymodel),keyfield)!=kwargs[field]:
+                            return False
+                    except ValueError:
+                        keymodel, keyfield, keyfield2 = field.split("__")
+                        if getattr(getattr(getattr(self,keymodel),keyfield),keyfield2)!=kwargs[field]:
+                            return False
                 else:
 #                    print field
                     raise KeyError

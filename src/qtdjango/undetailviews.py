@@ -167,6 +167,8 @@ class TableView(QTableView, AbstactQtModelUndetailView):
     _qt_model_class = TableModel
     modelSelectionChanged = QtCore.pyqtSignal([Model]) ##dont work when in
                                                         #father class
+
+
     def __init__(self, filter=None):
         QTableView.__init__(self)
         AbstactQtModelUndetailView.__init__(self, filter)
@@ -180,6 +182,8 @@ class TableView(QTableView, AbstactQtModelUndetailView):
                 sort_by = self.sort_by
 
             self.sortByColumn(self.fields.index(sort_by), sort_order)
+
+
 
 
 

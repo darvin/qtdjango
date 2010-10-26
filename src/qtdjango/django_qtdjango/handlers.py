@@ -56,7 +56,11 @@ def create_handler_type(model):
     f = []
     for field in model._meta.fields:
         f.append(field.name)
-
+    try:
+        for method in model.include_methods_results:
+            f.append(method)
+    except AttributeError:
+        pass
     for field in model._meta.many_to_many:
         f.append(field.name)
     handler_type = type(model.__name__+"Handler", (MetaHandler,),\

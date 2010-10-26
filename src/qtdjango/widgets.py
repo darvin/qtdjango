@@ -46,8 +46,11 @@ class ForeignKeyWidget(QComboBox, Widget):
         self.qtmodel.set_filter(filter)
 
     def getData(self):
-        return self.qtmodel.get_model_instance_by_int_index(\
+        try:
+            return self.qtmodel.get_model_instance_by_int_index(\
                 self.currentIndex())
+        except IndexError:
+            return None
 
     def setData(self, data):
         self.qtmodel = ListModel(parent=self, filter=None,\
