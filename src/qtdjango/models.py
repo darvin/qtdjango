@@ -197,6 +197,8 @@ class Model(object):
     include_methods_results = {}
     """@cvar: Dict of methods to fetch from server"""
 
+    dump_order = 0
+    """@cvar: Order to dump"""
 
     @classmethod
     def load(cls):
@@ -274,6 +276,8 @@ class Model(object):
         for fieldname, field in self.__class__.get_fields().items():
             if fieldname!="id" and not field.read_only and getattr(self, fieldname) is not None:
                 d[fieldname]=unicode(field.to_raw(getattr(self, fieldname))).encode('utf-8')
+        from pprint import pprint
+        pprint(d)
         return d
 
     @classmethod
@@ -287,6 +291,7 @@ class Model(object):
         o.__dumped = False
         o.id = cls.max_negative_undumped_id
         cls.max_negative_undumped_id-=1
+        cls.objects.append(o)
         return o
 
     @classmethod
@@ -394,7 +399,7 @@ class Model(object):
                         if getattr(getattr(getattr(self,keymodel),keyfield),keyfield2)!=kwargs[field]:
                             return False
                 else:
-                    print field
+                    print field, self
                     raise KeyError
         return True
 
@@ -450,9 +455,7 @@ class Model(object):
         """
         Saves object
         """
-        dubl = self.get(self.id)
-        if dubl is None:
-            self.objects.append(self)
+
         self.__dumped = False
         self.notify()
 

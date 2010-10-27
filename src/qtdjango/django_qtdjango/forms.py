@@ -3,8 +3,12 @@ __author__ = 'darvin'
 from django import forms
 
 class MetaForm(forms.ModelForm):
-   class Meta:
-      pass
+    class Meta:
+        pass
+    def clean(self):
+        cleaned_data = self.cleaned_data
+        print cleaned_data
+        return cleaned_data
 
 
 def create_form_type(model):

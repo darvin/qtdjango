@@ -71,7 +71,11 @@ class ModelsManager(object):
         @return: responces dict of all models
         """
         responces = {}
+        from operator import attrgetter
+
+        self.models.sort(key=attrgetter("dump_order"))
         for model in self.models:
+            print model
             responces[model.verbose_name(True)] = model.dump()
         for func in self.notify_dumped:
             func(responces)

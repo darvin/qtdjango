@@ -18,13 +18,14 @@ class DetailView(QDialog, BaseView):
     inline_views = ()
     """@cvar: Tuple of inline views. ((InlineViewClass, "filter_field", "Caption"),)"""
 
-    def __init__(self, parent=None, model_instance=None, filter=None,**kwargs):
+    def __init__(self, model_instance, parent=None, filter=None,**kwargs):
         QDialog.__init__(self, parent, **kwargs)
         BaseView.__init__(self, **kwargs)
-        if model_instance is None:
-            self.model_instance = self.model.new()
-        else:
-            self.model_instance = model_instance
+
+        self.model_instance = model_instance
+        from pprint import pprint
+        pprint (model_instance)
+        print model_instance.machine
         self.formlayout = QFormLayout()
         self._widgets={}
         self.fields = [field for field in self.fields\
@@ -71,6 +72,7 @@ class DetailView(QDialog, BaseView):
             self._widgets[field].setData(getattr(self.model_instance,field))
 
     def set_filter(self, filter):
+        print "filter ", filter
         if filter is not None:
             for field, w in self._widgets.items():
                 if isinstance(w, ForeignKeyWidget):

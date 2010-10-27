@@ -117,11 +117,11 @@ class AbstactQtModelUndetailView(UndetailView, QAbstractItemView):
         UndetailView.set_filter(self, filter)
         self.qtmodel.set_filter(self.filter)
 
-    def create_detail_view(self, model_to_edit=None, filter=None):
+    def create_detail_view(self, model_instance, filter=None):
 
         #t = type(self.model.__name__.upper() + "DetailView",\
                  #(DetailView,), {"model":model_to_edit})
-        return self.detail_view(parent=self, model_instance=model_to_edit,\
+        return self.detail_view(parent=self, model_instance=model_instance,\
                                 filter=filter)
 
     @QtCore.pyqtSlot()
@@ -141,8 +141,11 @@ class AbstactQtModelUndetailView(UndetailView, QAbstractItemView):
         #FIXME
         print "delete - FIXME"
 
+    def create_model_instance(self):
+        return self.model.new()
+
     def model_new (self):
-        dv = self.create_detail_view(filter=self.filter)
+        dv = self.create_detail_view(model_instance=self.create_model_instance(), filter=self.filter)
         dv.show()
 
     def refresh(self):
