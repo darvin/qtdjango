@@ -397,16 +397,16 @@ class Model(object):
                     if not getattr(self, field)==kwargs[field]:
                         return False
             except AttributeError:
-                #FIXME to any number of folding
                 if "__" in field:
-                    try:
-                        keymodel, keyfield = field.split("__")
-                        if getattr(getattr(self,keymodel),keyfield)!=kwargs[field]:
+                    fs = field.split("__")
+                    m = self
+                    for i,f in enumerate(fs):
+                        try:
+                            m=getattr(m,f)
+                        except AttributeError:
                             return False
-                    except ValueError:
-                        keymodel, keyfield, keyfield2 = field.split("__")
-                        if getattr(getattr(getattr(self,keymodel),keyfield),keyfield2)!=kwargs[field]:
-                            return False
+                    if kwargs[field]!=m:
+                        return False
                 else:
                     print field, self
                     raise KeyError
