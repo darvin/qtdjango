@@ -26,10 +26,16 @@ class Field(object):
             self.verbose_name = verbose_name
         except IndexError:
             pass
-        self.read_only = False
+        self.__read_only =[]
 
     def from_raw(self, data):
         return data
+
+    def set_read_only_in(self, model_class):
+        self.__read_only.append(model_class)
+
+    def is_read_only_in(self, model_class):
+        return model_class in self.__read_only
 
     def to_raw(self, data):
         return data
@@ -132,11 +138,11 @@ class ForeignKey(RelField):
             return None
 
 
+
     def __init__(self, model, verbose_name=None, *args, **kwargs):
         super(ForeignKey, self).__init__(verbose_name=verbose_name, *args, **kwargs)
         self.model = model
-#        self.model.load()
-#        self.model.__setattr__("foreing_key_model_"+kwargs["self"].__name__, kwargs["self"])
+
 
 
 
@@ -242,7 +248,18 @@ class Model(object):
             setattr(cls, method, cls.include_methods_results[method])
 
         for field in cls.read_only_fields+cls.include_methods_results.keys():
-            getattr(cls, field).read_only = True
+            getattr(cls, field).set_read_only_in(cls)
+
+        for fieldname, field in cls.get_rel_fields().items():
+            #FIXME!
+            try:
+                field.model.reverse_sets
+            except AttributeError:
+                field.model.reverse_sets = {}
+            field.model.reverse_sets[cls.__name__.lower()+"_set"] =\
+                    lambda inst: cls.filter(**{fieldname:inst})
+
+
 
     @classmethod
     def dump(cls):
@@ -274,7 +291,7 @@ class Model(object):
         """Returns raw model instance representation"""
         d = {}
         for fieldname, field in self.__class__.get_fields().items():
-            if fieldname!="id" and not field.read_only and getattr(self, fieldname) is not None:
+            if fieldname!="id" and not field.is_read_only_in(self.__class__) and getattr(self, fieldname) is not None:
                 d[fieldname]=unicode(field.to_raw(getattr(self, fieldname))).encode('utf-8')
         from pprint import pprint
         pprint(d)
@@ -318,15 +335,7 @@ class Model(object):
         res = cls.filter(id=id)
         if len(res)==1:
             return res[0]
-#    def foreign_set(self, setname):
-#        try:
-#            fclass = "foreing_key_model_"+setname
-#        except KeyError:
-#            print setname
-#            print globals()
-#            pass 
-#        return fclass.filter(\
-#                    **{self.__class__.__name__.lower():self})
+
     @classmethod
     def get_fields(cls):
         """
@@ -442,6 +451,13 @@ class Model(object):
             except KeyError:
                 setattr(self, fieldname, field.blank())
 
+    def __getattr__(self, name):
+        try:
+            super(Model, self).__getattr__(name)
+        except AttributeError:
+            if name in self.reverse_sets:
+                return self.reverse_sets[name](self)
+        raise AttributeError
 
     @classmethod
     def notify(cls):
@@ -467,6 +483,11 @@ class Model(object):
     def __unicode__(self):
         return "default unicode method"
 
+    def extra_to_html(self):
+        """
+        Returns extra model-related objects, conventered to html
+        """
+        return ""
 
 
 class User(Model):

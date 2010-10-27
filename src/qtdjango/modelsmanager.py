@@ -46,6 +46,7 @@ class ModelsManager(object):
 
 
 
+
     def add_notify_dumped(self, function):
         """
         Adds function to notify when models dumps list

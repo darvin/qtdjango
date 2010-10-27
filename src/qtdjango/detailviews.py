@@ -29,7 +29,7 @@ class DetailView(QDialog, BaseView):
         self.formlayout = QFormLayout()
         self._widgets={}
         self.fields = [field for field in self.fields\
-                       if not getattr(self.model,field).read_only]
+                       if not getattr(self.model,field).is_read_only_in(self.model)]
         for field in self.fields:
             x = getattr(self.model,field)
             try:
