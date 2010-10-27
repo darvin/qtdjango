@@ -34,8 +34,6 @@ class ModelsManager(object):
         """@ivar notify_undumped: list of functions, that calls when changes"""
 
         self.models.sort(cmp=Model.is_model_depend_on)
-#        from pprint import pprint
-#        pprint(self.models)
 
         for m in self.models:
             m.init_model_class(models_manager=self)

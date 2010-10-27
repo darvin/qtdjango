@@ -256,8 +256,8 @@ class Model(object):
                 field.model.reverse_sets
             except AttributeError:
                 field.model.reverse_sets = {}
-            field.model.reverse_sets[cls.__name__.lower()+"_set"] =\
-                    lambda inst: cls.filter(**{fieldname:inst})
+            setattr(field.model, cls.__name__.lower()+"_set",
+                    lambda inst: cls.filter(**{fieldname:inst}))
 
 
 
@@ -451,13 +451,7 @@ class Model(object):
             except KeyError:
                 setattr(self, fieldname, field.blank())
 
-    def __getattr__(self, name):
-        try:
-            super(Model, self).__getattr__(name)
-        except AttributeError:
-            if name in self.reverse_sets:
-                return self.reverse_sets[name](self)
-        raise AttributeError
+
 
     @classmethod
     def notify(cls):
