@@ -1,11 +1,11 @@
 
-from restclient.restful_lib import Connection
-import json
+
+
 import sys
 import os
 from helpers import get_all_models
 from qtdjango.models import Model
-
+from qtdjango.connection import Connection
 
 class ModelsManager(object):
     """
@@ -23,8 +23,7 @@ class ModelsManager(object):
         @param login: login to django server
         @param password: password to django server
         """
-        self.login, self.password, self.url = login, password, url
-        self.__connection = Connection(server)
+        self.__connection = Connection(server, url, login, password)
         self.models = self.__get_registered_models(path_to_django_project,\
                 app_list, exclude_model_names)
         self.notify_dumped = []
@@ -64,6 +63,25 @@ class ModelsManager(object):
         for func in self.notify_undumped:
             func()
 
+    def get_resource_from_server(self, resource_name):
+        """
+        Gets responce from remote Django server
+        @param resource_name: name of piston resource
+        @rtype: dict
+        """
+        return self.__connection.get_resource_from_server(resource_name)
+
+    def post_resource_to_server(self, resource_name, args):
+        """
+        Posts to remote Django server
+        @param resource_name: name of piston resource
+        @param body: body of post request
+        @rtype: dict
+        """
+        return self.__connection.post_resource_to_server(resource_name, args)
+
+
+
     def dump(self):
         """
         Dump all models to server. Notify all functions about it
@@ -89,24 +107,6 @@ class ModelsManager(object):
                 return False
         return True
 
-    def get_resource_from_server(self, resource_name):
-        """
-        Gets responce from remote Django server
-        @param resource_name: name of piston resource
-        @rtype: dict
-        """
-        res = self.__connection.request_get("%s%s" % (self.url,resource_name))["body"]
-        return json.loads(res)
-
-    def post_resource_to_server(self, resource_name, args):
-        """
-        Posts to remote Django server
-        @param resource_name: name of piston resource
-        @param body: body of post request
-        @rtype: dict
-        """
-        res = self.__connection.request_post("%s%s" % (self.url,resource_name),args=args)
-        return res
 
     def do_models_magic_with_module(self, module):
         """

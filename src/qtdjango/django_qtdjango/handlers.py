@@ -9,6 +9,50 @@ from piston.utils import rc
 from piston.utils import validate
 
 from forms import create_form_type
+import qtdjango
+from django.conf import settings
+
+class InfoHandler(AnonymousBaseHandler):
+    allowed_methods = ('GET',)
+
+    models = []
+
+    @staticmethod
+    def create_model_info(model):
+        fields = {}
+        for field in model._meta.fields:
+            try:
+                f = {}
+                f["type"]=field.__class__.__name__
+                fields[field.name] = f
+            except AttributeError:
+                pass
+
+        info = {"name":model.__name__, \
+
+                "fields":fields,\
+                }
+
+        try:
+            info["dump_order"]=model.dump_order
+        except AttributeError:
+            pass
+        return info
+
+    @classmethod
+    def set_models(cls, models):
+        for model in models:
+            cls.models.append(cls.create_model_info(model))
+
+    def read(self, request):
+        d = {
+            "qtdjango_version":qtdjango.__version__,
+            "qtdjango_apps_setting":getattr(settings, "QTDJANGO_APPS" ),
+            "models":self.models
+        }
+        return d
+
+
 
 class MetaHandler(AnonymousBaseHandler):
     exclude = ()
