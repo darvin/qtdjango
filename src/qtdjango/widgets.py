@@ -76,6 +76,10 @@ class SpinBoxWidget(QSpinBox, Widget):
             self.setValue = data
 
 class DateTimeEditWidget(QDateTimeEdit, Widget):
+    def __init__(self, field):
+        Widget.__init__(self, field)
+        QDateTimeEdit.__init__(self)
+
     def getData(self):
         return self.dateTime().toPyDateTime()
 
@@ -86,6 +90,10 @@ class DateTimeEditWidget(QDateTimeEdit, Widget):
             self.setDateTime(QDateTime.currentDateTime())
 
 class CheckBoxWidget(QCheckBox, Widget):
+    def __init__(self, field):
+       Widget.__init__(self, field)
+       QCheckBox.__init__(self)
+
     def getData(self):
         return self.isChecked()
     def setData(self, data):
