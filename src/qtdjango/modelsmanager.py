@@ -36,6 +36,7 @@ class ModelsManager(object):
         self.models.sort(cmp=Model.is_model_depend_on)
 
         for m in self.models:
+            m.version = 0
             m.init_model_class(models_manager=self)
 
     def set_connection_params(self, server, url, login, password):
@@ -44,11 +45,20 @@ class ModelsManager(object):
     def load_from_server(self):
         try:
             for model in self.models:
+                model.flush()
+            for model in self.models:
+                model.version += 1
+
                 model.load()
             for model in self.models:
                 model.refresh_foreing_keys()
+            for model in self.models:
+                model.notify()
         except:
             return False
+        finally:
+            for func in self.notify_dumped:
+                func()
         return True
 
     def save_to_file(self, file):

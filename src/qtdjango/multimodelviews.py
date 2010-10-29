@@ -60,11 +60,12 @@ class MultiModelTreeView(QTreeWidget, MultiModelView):
         MultiModelView.__init__(self, *args, **kwargs)
         self.header().hide()
         self.refresh()
+        self.currentItemChanged.connect(self.currentItemChange)
+
 
     def refresh(self):
         self.clear()
         self.__process_node(parenttreeitem=self)
-        self.currentItemChanged.connect(self.currentItemChange)
 
     @QtCore.pyqtSlot("QTreeWidgetItem*", "QTreeWidgetItem*")
     def currentItemChange(self, current, previous):
@@ -81,7 +82,10 @@ class ModelInfoView(QWebView, MultiModelView):
         self.setHtml("")
 
     def refresh(self):
-        self.modelChanged(self.model_instance)
+        try:
+            self.modelChanged(self.model_instance)
+        except AttributeError:
+            pass
 
     @QtCore.pyqtSlot(Model)
     def modelChanged(self, model):

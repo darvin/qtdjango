@@ -62,6 +62,7 @@ class AbstractModel(QtCore.QAbstractTableModel):
 
     def get_decorate(self, model_instance):
         """Returns (FontRole, BackgroundRole, ForegroundRole) for model_instance"""
+
         if model_instance.is_dumped() and model_instance.is_valid():
             return (QtCore.QVariant(), QtCore.QVariant(), QtCore.QVariant())
         else:

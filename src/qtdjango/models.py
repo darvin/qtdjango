@@ -226,12 +226,12 @@ class Model(object):
                 raise ResourceNameError
             cls.id = IdField("Id")
             raw = cls.__models_manager.get_resource_from_server(cls.resource_name)
-            cls.objects = []
-            cls.views = []
+
 
             for x in raw:
                 o = cls(**x)
                 o.__dumped=True
+                o.version = cls.version
                 cls.objects.append(o)
             cls.loaded = True
     #FIXME
@@ -251,6 +251,7 @@ class Model(object):
         @param models_manager: ModelsManager object
         """
         cls.__models_manager = models_manager
+        cls.views = []
         for method in cls.exclude_methods:
             setattr(cls, method, getattr(Model, method))
 
@@ -269,6 +270,10 @@ class Model(object):
             setattr(field.model, cls.__name__.lower()+"_set",
                     lambda inst: cls.filter(**{fieldname:inst}))
 
+    @classmethod
+    def flush(cls):
+        cls.objects = []
+        cls.loaded = False
 
 
     @classmethod
@@ -473,8 +478,8 @@ class Model(object):
     @classmethod
     def notify(cls):
         """Sends notify to all views, connected to model"""
+        print "notify", cls, cls.views
         for v in cls.views:
-            print "notify!", v
             v.refresh()
         if not cls.is_all_dumped():
             cls.__models_manager.notify_changes()
