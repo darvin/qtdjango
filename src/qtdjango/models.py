@@ -21,6 +21,7 @@ def istype(obj, typename):
 
 class Field(object):
     widget = None
+    always_read_only = False
     def __init__(self, verbose_name=None, *args, **kwargs):
         try:
             self.verbose_name = verbose_name
@@ -44,7 +45,7 @@ class Field(object):
         self.__read_only.append(model_class)
 
     def is_read_only_in(self, model_class):
-        return model_class in self.__read_only
+        return model_class in self.__read_only or self.always_read_only
 
     def to_raw(self, data):
         return data
@@ -63,6 +64,7 @@ class Field(object):
 
 
 class IdField(Field):
+    always_read_only = True
     def __init__(self, *args, **kwargs):
         super(IdField, self).__init__(*args, **kwargs)
         self.read_only = True
@@ -226,8 +228,7 @@ class Model(object):
             raw = cls.__models_manager.get_resource_from_server(cls.resource_name)
             cls.objects = []
             cls.views = []
-            cls.max_negative_undumped_id = -1
-            """@cvar Current maximal undumped id"""
+
             for x in raw:
                 o = cls(**x)
                 o.__dumped=True
@@ -315,8 +316,7 @@ class Model(object):
         """Used only from user code. Returns new model instance"""
         o = cls(**kwargs)
         o.__dumped = False
-        o.id = cls.max_negative_undumped_id
-        cls.max_negative_undumped_id-=1
+        o.id = cls.max_negative_undumped_id()
         cls.objects.append(o)
         return o
 
@@ -500,6 +500,14 @@ class Model(object):
         Returns extra model-related objects, conventered to html
         """
         return ""
+
+    @classmethod
+    def max_negative_undumped_id(cls):
+        max = 0
+        for o in cls.objects:
+            if o.id<max:
+                max = o.id
+        return max+1
 
 
 class User(Model):

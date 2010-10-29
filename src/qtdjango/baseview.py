@@ -19,7 +19,7 @@ class BaseView(object):
         self.model.add_notify(self)
         if self.fields == ():
             self.fields = [x for x in self.model.get_fields()]
-            self.fields.remove(self.exclude_fields)
+
 
     def refresh(self):
         """docstring for dataChanged"""
