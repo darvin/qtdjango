@@ -2,11 +2,24 @@
 from PyQt4.QtGui import QTreeWidget, QTreeWidgetItem
 from PyQt4 import QtCore
 from qtdjango.models import Model
+from PyQt4.QtWebKit import QWebView
+#noinspection PyUnresolvedReferences
+import PyQt4.QtNetwork
 
 __author__ = 'darvin'
 
 class MultiModelView(object):
-    pass
+    models = None
+    def __init__(self):
+        for model in self.models:
+            model.add_notify(self)
+
+
+
+    def refresh(self):
+        """Refreshs model"""
+        pass
+
 
 
 
@@ -43,11 +56,57 @@ class MultiModelTreeView(QTreeWidget, MultiModelView):
         return result
 
     def __init__(self, *args, **kwargs):
-        super(MultiModelTreeView,self).__init__(*args, **kwargs)
+        QTreeWidget.__init__(self, *args, **kwargs)
+        MultiModelView.__init__(self, *args, **kwargs)
+        self.header().hide()
+        self.refresh()
+
+    def refresh(self):
+        self.clear()
         self.__process_node(parenttreeitem=self)
         self.currentItemChanged.connect(self.currentItemChange)
-        self.header().hide()
 
     @QtCore.pyqtSlot("QTreeWidgetItem*", "QTreeWidgetItem*")
     def currentItemChange(self, current, previous):
         self.modelSelectionChanged.emit(current.model_instance)
+
+
+
+class ModelInfoView(QWebView, MultiModelView):
+    def __init__(self, *args, **kwargs):
+
+        QWebView.__init__(self, *args, **kwargs)
+        MultiModelView.__init__(self, *args, **kwargs)
+
+        self.setHtml("")
+
+    def refresh(self):
+        self.modelChanged(self.model_instance)
+
+    @QtCore.pyqtSlot(Model)
+    def modelChanged(self, model):
+        self.model_instance = model
+        header1 = model.__class__.verbose_name()
+        header2 = "" #unicode(model)
+        fields = model.__class__.get_fields()
+        field_text_values = {}
+        for fieldname, field in fields.items():
+            if not fieldname in ("user", "id", "extra_to_html"):
+                field_text_values[fieldname] = []
+                field_text_values[fieldname].append(field.verbose_name)
+                field_text_values[fieldname].append(field.to_text(getattr(model, fieldname)))
+
+
+        html = u""
+        html += u"<h1>%s</h1><h2>%s</h2>" %(header1,header2)
+        html += u"<br>".join([u"<b>%s:</b> <i>%s</i>"%(x[0], x[1]) for x in field_text_values.values()])
+
+        html += "<br>" + model.extra_to_html()
+
+        self.setHtml(html)
+
+    @QtCore.pyqtSlot()
+    def modelCleared(self):
+        self.setHtml("")
+
+

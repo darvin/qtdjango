@@ -25,6 +25,10 @@ class BaseView(object):
         """docstring for dataChanged"""
         pass
 
+    def clean(self):
+        """Cleans temporary models of view"""
+        raise NotImplementedError
+
 
     def save(self):
         """Saves models changes in view"""

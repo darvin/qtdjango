@@ -23,9 +23,7 @@ class DetailView(QDialog, BaseView):
         BaseView.__init__(self, **kwargs)
 
         self.model_instance = model_instance
-        from pprint import pprint
-        pprint (model_instance)
-        print model_instance.machine
+
         self.formlayout = QFormLayout()
         self._widgets={}
         self.fields = [field for field in self.fields\
@@ -103,3 +101,10 @@ class DetailView(QDialog, BaseView):
     def accept(self):
         QDialog.accept(self)
         self.set_data_to_model()
+
+    def reject(self):
+        for v in self._inline_views:
+            v.clean()
+        QDialog.reject(self)
+
+

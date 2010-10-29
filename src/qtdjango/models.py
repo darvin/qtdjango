@@ -355,7 +355,8 @@ class Model(object):
     @classmethod
     def get_fields(cls):
         """
-        Returns dict of class Fields
+        Returns dict of class Fields           self.refresh()
+
         """
         f = {}
         for fieldname in dir(cls):
@@ -473,6 +474,7 @@ class Model(object):
     def notify(cls):
         """Sends notify to all views, connected to model"""
         for v in cls.views:
+            print "notify!", v
             v.refresh()
         if not cls.is_all_dumped():
             cls.__models_manager.notify_changes()

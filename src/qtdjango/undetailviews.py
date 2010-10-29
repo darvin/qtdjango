@@ -18,6 +18,10 @@ class UndetailView(BaseView):
         """Sets filter. Filter is dict"""
         self.filter = filter
 
+    def clean(self):
+        """Cleans temporary models of view"""
+        pass
+
 
 
 class UndetailWithButtonsView(QFrame, UndetailView):

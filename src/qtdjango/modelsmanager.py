@@ -3,6 +3,7 @@
 
 import sys
 import os
+import pickle
 from helpers import get_all_models
 from qtdjango.models import Model
 from qtdjango.connection import Connection
@@ -41,7 +42,27 @@ class ModelsManager(object):
         for model in self.models:
             model.refresh_foreing_keys()
 
+    def save_to_file(self, file):
+        """
+        Saves current modelmanager state to file
+        """
+        objs = {}
+        for model in self.models:
+            objs[model.__name__] = model.objects
+        pickle.dump(objs, file)
 
+    def load_from_file(self, file):
+        """
+        Loads modelmanager state from file
+        """
+        objs = pickle.load(file)
+
+        for model in self.models:
+            model.objects = objs[model.__name__]
+            model.notify()
+            print model.all()
+        if not self.is_all_dumped():
+            self.notify_changes()
 
 
     def add_notify_dumped(self, function):
