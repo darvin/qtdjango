@@ -36,12 +36,8 @@ class DetailView(QDialog, BaseView):
                 self._widgets[field] = self.widgets[field]
             except KeyError:
                 try:
-                    if self.fieldwidgets_dict[x.__class__] is ForeignKeyWidget:
-                        self._widgets[field] = \
-                            self.fieldwidgets_dict[x.__class__](model=x.model)
-                    else:
-                        self._widgets[field] = \
-                            self.fieldwidgets_dict[x.__class__]()
+                    self._widgets[field] = \
+                            self.fieldwidgets_dict[x.__class__](x)
                 except KeyError:
                     self._widgets[field] = LabelWidget() ##FIXME!
             self.formlayout.addRow(QtCore.QString.fromUtf8(x.get_label()), self._widgets[field])
@@ -107,5 +103,3 @@ class DetailView(QDialog, BaseView):
     def accept(self):
         QDialog.accept(self)
         self.set_data_to_model()
-
-

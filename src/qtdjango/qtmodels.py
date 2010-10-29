@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from PyQt4.QtGui import *
 from PyQt4 import QtCore, Qt
 
@@ -5,10 +7,16 @@ from PyQt4 import QtCore, Qt
 
 class AbstractModel(QtCore.QAbstractTableModel):
 
-    def __init__(self, model, filter, fields=None, parent=None,  *args):
+    def __init__(self, model, filter, fields=None, \
+                 parent=None, blank_variant=False, \
+                 blank_variant_verbose=u"<нет>", *args):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.model = model
         self.filter = filter
+        self.blank_variant = blank_variant
+        self.blank_variant_verbose = blank_variant_verbose
+
+
         if fields =="__unicode__":
             self._without_fields = True
         else:
@@ -29,9 +37,12 @@ class AbstractModel(QtCore.QAbstractTableModel):
 
     def filtered_model(self):
         if self.filter is None:
-            return self.model.all()
+            res = self.model.all()
         else:
-            return self.model.filter(**self.filter)
+            res = self.model.filter(**self.filter)
+        if self.blank_variant:
+            res = [None,] + res
+        return res
 
     def get_model_instance_by_index(self, index):
         data = self.filtered_model()
@@ -63,7 +74,9 @@ class AbstractModel(QtCore.QAbstractTableModel):
             return (font, background, foreground)
 
     def rowCount(self, parent):
-        return len(self.filtered_model())
+        count = len(self.filtered_model())
+
+        return count
 
     def headerData(self, section, orientation, role):
         if role != QtCore.Qt.DisplayRole:
@@ -118,7 +131,10 @@ class ListModel(AbstractModel):
             if role==QtCore.Qt.UserRole:
                 return model_instance
             elif role == QtCore.Qt.DisplayRole:
-                return QtCore.QVariant(unicode(model_instance))
+                if model_instance is None:
+                    return self.blank_variant_verbose
+                else:
+                    return QtCore.QVariant(unicode(model_instance))
         return QtCore.QVariant()
 
 class TreeModel(AbstractModel):

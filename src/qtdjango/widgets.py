@@ -12,8 +12,8 @@ from PyQt4.QtCore import QDateTime
 
 
 class Widget(object):
-#    def __init__(self):
-#        pass
+    def __init__(self, field):
+        self.field = field
 
         
     def getData(self):
@@ -24,8 +24,8 @@ class Widget(object):
 
 
 class LabelWidget(QLabel, Widget):
-    def __init__(self):
-        Widget.__init__(self)
+    def __init__(self, field):
+        Widget.__init__(self, field)
         QLabel.__init__(self)
         
     def getData(self):
@@ -36,10 +36,10 @@ class LabelWidget(QLabel, Widget):
             self.setText(str(data))
 
 class ForeignKeyWidget(QComboBox, Widget):
-    def __init__(self, model):
-        Widget.__init__(self)
+    def __init__(self, field):
+        Widget.__init__(self, field)
         QComboBox.__init__(self)
-        self.model = model
+        self.model = self.field.model
 
 
     def set_filter(self, filter):
@@ -54,7 +54,7 @@ class ForeignKeyWidget(QComboBox, Widget):
 
     def setData(self, data):
         self.qtmodel = ListModel(parent=self, filter=None,\
-                                model=self.model)
+                                model=self.model, blank_variant=self.field.blank)
         self.setModel(self.qtmodel)
         if data is not None:
             self.setCurrentIndex(self.qtmodel.get_index_of_model(data))
@@ -62,8 +62,8 @@ class ForeignKeyWidget(QComboBox, Widget):
 
 
 class SpinBoxWidget(QSpinBox, Widget):
-    def __init__(self):
-        Widget.__init__(self)
+    def __init__(self, field):
+        Widget.__init__(self, field)
         QLabel.__init__(self)
         self.setMinimum(0)
         self.setMaximum(999999)
@@ -94,8 +94,8 @@ class CheckBoxWidget(QCheckBox, Widget):
         self.stateChanged.emit(data)
 
 class ComboBoxWidget(QComboBox, Widget):
-    def __init__(self):
-        Widget.__init__(self)
+    def __init__(self, field):
+        Widget.__init__(self, field)
         QComboBox.__init__(self)
         
     def getData(self):
@@ -107,10 +107,10 @@ class ComboBoxWidget(QComboBox, Widget):
 
 
 class TextEditWidget(QTextEdit, Widget):
-    def __init__(self):
-        Widget.__init__(self)
+    def __init__(self, field):
+        Widget.__init__(self, field)
         QTextEdit.__init__(self)
-        
+
     def getData(self):
         return unicode(self.toPlainText())
     
@@ -120,10 +120,10 @@ class TextEditWidget(QTextEdit, Widget):
 
 
 class LineEditWidget(QLineEdit, Widget):
-    def __init__(self):
-        Widget.__init__(self)
+    def __init__(self, field):
+        Widget.__init__(self, field)
         QLineEdit.__init__(self)
-        
+
     def getData(self):
         return unicode(self.text())
     
@@ -133,10 +133,10 @@ class LineEditWidget(QLineEdit, Widget):
 
 
 class IdLabelWidget(QLabel, Widget):
-    def __init__(self):
-        Widget.__init__(self)
+    def __init__(self, field):
+        Widget.__init__(self, field)
         QLabel.__init__(self)
-        
+
     def getData(self):
         res = self.text().toInt()
         if res[1]:

@@ -25,8 +25,17 @@ class Field(object):
         try:
             self.verbose_name = verbose_name
         except IndexError:
-            pass
+            self.verbose_name = ""
         self.__read_only =[]
+        try:
+            self.null = kwargs["null"]
+        except KeyError:
+            self.null = False
+        try:
+            self.blank = kwargs["blank"]
+        except KeyError:
+            self.blank = False
+
 
     def from_raw(self, data):
         return data
@@ -43,7 +52,7 @@ class Field(object):
     def to_text(self, data):
         return unicode(data)
 
-    def blank(self):
+    def get_blank(self):
         return None
 
     def get_label(self):
@@ -311,6 +320,13 @@ class Model(object):
         cls.objects.append(o)
         return o
 
+    def delete(self):
+        """Deletes model instance"""
+        self.__class__.objects.remove(self)
+        self.notify()
+        #FIXME real delete
+
+
     @classmethod
     def verbose_name(cls, plural=False):
         """Returns verbose name of model
@@ -449,7 +465,7 @@ class Model(object):
             try:
                 setattr(self, fieldname, field.from_raw(initdict[fieldname]))
             except KeyError:
-                setattr(self, fieldname, field.blank())
+                setattr(self, fieldname, field.get_blank())
 
 
 

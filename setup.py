@@ -24,12 +24,14 @@ Usage (RPM-based linux distros):
 
 
 
+execfile('src/qtdjango/__init__.py')
+
 
 
 
 base_options = dict (name='qtdjango',
       install_requires = ["django", ],
-      version='1.4.1',
+      version=__version__,
       description='''Library for connection of PyQt application to Django server,
 also reusable app.''',
       author='Sergey Klimov',

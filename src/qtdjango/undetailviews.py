@@ -138,15 +138,22 @@ class AbstactQtModelUndetailView(UndetailView, QAbstractItemView):
         dv.show()
 
     def model_delete (self):
-        #FIXME
-        print "delete - FIXME"
+        m = self.qtmodel.data(\
+                            self.sortmodelproxy.mapToSource(self.currentIndex()),\
+                            QtCore.Qt.UserRole)
+        m.delete()
 
     def create_model_instance(self):
         return self.model.new()
 
     def model_new (self):
-        dv = self.create_detail_view(model_instance=self.create_model_instance(), filter=self.filter)
-        dv.show()
+        new_model = self.create_model_instance()
+        dv = self.create_detail_view(model_instance=new_model, filter=self.filter)
+        result = dv.exec_()
+        if result==QDialog.Accepted:
+            pass
+        elif result==QDialog.Rejected:
+            new_model.delete()
 
     def refresh(self):
         self.qtmodel.reset()

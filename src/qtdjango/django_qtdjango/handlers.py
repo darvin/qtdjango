@@ -16,6 +16,7 @@ class InfoHandler(AnonymousBaseHandler):
     allowed_methods = ('GET',)
 
     models = []
+    server_package = None
 
     @staticmethod
     def create_model_info(model):
@@ -45,8 +46,12 @@ class InfoHandler(AnonymousBaseHandler):
             cls.models.append(cls.create_model_info(model))
 
     def read(self, request):
+        #FIXME!
+        project_module = __import__(getattr(settings, "ROOT_URLCONF").split(".")[0])
+        project_version = project_module.__version__
         d = {
             "qtdjango_version":qtdjango.__version__,
+            "server_version":project_version,
             "qtdjango_apps_setting":getattr(settings, "QTDJANGO_APPS" ),
             "models":self.models
         }
