@@ -24,7 +24,7 @@ class ModelsManager(object):
         @param login: login to django server
         @param password: password to django server
         """
-        self.__connection = Connection(server, url, login, password)
+        self.set_connection_params(server, url, login, password)
         self.models = self.__get_registered_models(path_to_django_project,\
                 app_list, exclude_model_names)
         self.notify_dumped = []
@@ -37,10 +37,19 @@ class ModelsManager(object):
 
         for m in self.models:
             m.init_model_class(models_manager=self)
-        for model in self.models:
-            model.load()
-        for model in self.models:
-            model.refresh_foreing_keys()
+
+    def set_connection_params(self, server, url, login, password):
+        self.__connection = Connection(server, url, login, password)
+
+    def load_from_server(self):
+        try:
+            for model in self.models:
+                model.load()
+            for model in self.models:
+                model.refresh_foreing_keys()
+        except:
+            return False
+        return True
 
     def save_to_file(self, file):
         """
@@ -63,6 +72,8 @@ class ModelsManager(object):
             print model.all()
         if not self.is_all_dumped():
             self.notify_changes()
+
+        return True
 
 
     def add_notify_dumped(self, function):

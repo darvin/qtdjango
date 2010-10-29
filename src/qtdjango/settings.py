@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from qtdjango.helpers import test_connection
+
 __author__ = 'darvin'
 
 
@@ -26,10 +28,11 @@ class SettingsDialog(QDialog):
             ("password", u"Ваш пароль", QLineEdit, ""),
 
         ]
-    def __init__(self, parent=None, error_message=None):
+    def __init__(self, parent=None, error_message=None, models_manager=None):
         super(SettingsDialog, self).__init__(parent)
         self.setModal(True)
         self.formlayout = QFormLayout()
+        self.models_manager = models_manager
         self.settings = QSettings()
         self.message_widget = QLabel()
         self.__widgets = []
@@ -64,7 +67,15 @@ class SettingsDialog(QDialog):
         if self.test():
             for name, caption, widget, default in self.__widgets:
                 self.settings.setValue(name, widget.text())
+
+            self.models_manager.set_connection_params(\
+                    self.get_value("address"), \
+                    self.get_value("api_path"), \
+                    self.get_value("login"),\
+                    self.get_value("password"))
             QDialog.accept(self)
+
+
 
     def restore(self):
         for name, caption, widget, default in self.__widgets:
@@ -86,19 +97,18 @@ class SettingsDialog(QDialog):
             if name in fields:
                 self.formlayout.labelForField(widget).setStyleSheet(css)
 
-
+    def get_value(self, name):
+        return unicode(self.settings.value(name).toString())
 
     def test(self):
         s = {}
         for name, caption, widget, default in self.__widgets:
             s[name] = unicode(widget.text())
 
-        c = Connection(s["address"],s["api_path"],s["login"],s["password"])
 
-
-        remote_version = None
         try:
-            remote_version = c.get_resource_from_server("info")["qtdjango_version"]
+            remote_version = test_connection(s["address"],s["api_path"],s["login"],s["password"])
+
             import qtdjango
             if qtdjango.__version__==remote_version:
                 self.message(text=u"Удаленный сервер настроен правильно!", works=True)

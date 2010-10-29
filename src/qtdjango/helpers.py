@@ -6,6 +6,7 @@ from qtdjango.models import User
 #        model.resource_name = url
 #        ms.append(model)
 #    return ms
+from qtdjango.connection import Connection
 
 
 def get_resource_name_for_model(model):
@@ -48,3 +49,7 @@ def get_all_models(app_list, from_django=False, exclude_model_names=("",)):
     return models
 
     
+def test_connection(address, api_path, login, password):
+    c = Connection(address, api_path, login, password)
+    remote_version = c.get_resource_from_server("info")["qtdjango_version"]
+    return remote_version
