@@ -2,6 +2,8 @@ from django.conf import settings
 
 from qtdjango.helpers import get_resource_name_for_model, get_all_models
 from piston.resource import Resource
+from piston.authentication import HttpBasicAuthentication
+
 from handlers import create_handler_type, InfoHandler
 from django.conf.urls.defaults import url, patterns
 
@@ -11,7 +13,7 @@ def create_resource(model):
     """Builds resource from model class
     @param model: Model class"""
 
-    return Resource(create_handler_type(model))
+    return Resource(create_handler_type(model), HttpBasicAuthentication())
 
 def get_url_pattens(app_list):
     """Gets app list returns urls patterns"""

@@ -18,7 +18,9 @@ class Connection(object):
         self.update_connection()
 
     def update_connection(self):
-        self.__connection = restclient.restful_lib.Connection(self.server)
+        self.__connection = \
+            restclient.restful_lib.Connection(\
+                    self.server, username=self.login, password=self.password)
 
     def get_resource_from_server(self, resource_name):
         """
@@ -48,3 +50,6 @@ class Connection(object):
         """
         res = self.__connection.request_post("%s%s" % (self.url,resource_name),args=args)
         return res
+
+    def get_login_password(self):
+        return self.login, self.password

@@ -4,7 +4,7 @@ This module must be imported from django enviroment
 '''
 
 
-from piston.handler import AnonymousBaseHandler
+from piston.handler import AnonymousBaseHandler, BaseHandler
 from piston.utils import rc
 from piston.utils import validate
 
@@ -29,9 +29,8 @@ class InfoHandler(AnonymousBaseHandler):
             except AttributeError:
                 pass
 
-        info = {"name":model.__name__, \
-
-                "fields":fields,\
+        info = {"name":model.__name__,
+                "fields":fields,
                 }
 
         try:
@@ -59,7 +58,7 @@ class InfoHandler(AnonymousBaseHandler):
 
 
 
-class MetaHandler(AnonymousBaseHandler):
+class MetaHandler(BaseHandler):
     exclude = ()
 #    fields = ("machinemark",)
     allowed_methods = ('GET','POST')

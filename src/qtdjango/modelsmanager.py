@@ -24,14 +24,18 @@ class ModelsManager(object):
         @param login: login to django server
         @param password: password to django server
         """
-        self.set_connection_params(server, url, login, password)
         self.models = self.__get_registered_models(path_to_django_project,\
                 app_list, exclude_model_names)
+
+
+
         self.notify_dumped = []
         """@ivar notify_dumped: list of functions, that calls when all saved"""
 
         self.notify_undumped = []
         """@ivar notify_undumped: list of functions, that calls when changes"""
+
+        self.notify_user_changed = []
 
         self.models.sort(cmp=Model.is_model_depend_on)
 
@@ -39,8 +43,15 @@ class ModelsManager(object):
             m.version = 0
             m.init_model_class(models_manager=self)
 
+        self.set_connection_params(server, url, login, password)
+
+
     def set_connection_params(self, server, url, login, password):
+
         self.__connection = Connection(server, url, login, password)
+        current_user = self.get_current_user()
+        for func in self.notify_user_changed:
+            func(current_user)
 
     def load_from_server(self):
         try:
@@ -97,6 +108,15 @@ class ModelsManager(object):
         Adds function to notify when models become have changes
         """
         self.notify_undumped.append(function)
+
+
+
+    def add_notify_change_user(self, function):
+        """
+        Adds function to notify when models become have changes
+        """
+        self.notify_user_changed.append(function)
+
 
     def notify_changes(self):
         """
@@ -192,4 +212,12 @@ class ModelsManager(object):
         return ms
 
 
-
+    def get_current_user(self):
+        user_name = self.__connection.get_login_password()[0]
+        users = self.User.filter(username=user_name)
+        if len(users)==1:
+            return users[0]
+        elif len(users)==0:
+            return None
+        else:
+            raise AssertionError

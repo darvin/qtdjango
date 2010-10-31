@@ -231,6 +231,8 @@ class Model(object):
     read_only_fields = []
     """@cvar: List of fields to read-only"""
 
+    auto_user_fields = []
+
     include_methods_results = {}
     """@cvar: Dict of methods to fetch from server"""
 
@@ -278,7 +280,9 @@ class Model(object):
         for method in cls.include_methods_results:
             setattr(cls, method, cls.include_methods_results[method])
 
-        for field in cls.read_only_fields+cls.include_methods_results.keys():
+        for field in cls.auto_user_fields+\
+                     cls.read_only_fields+\
+                     cls.include_methods_results.keys():
             getattr(cls, field).set_read_only_in(cls)
 
         for fieldname, field in cls.get_rel_fields().items():
@@ -326,7 +330,9 @@ class Model(object):
         """Returns raw model instance representation"""
         d = {}
         for fieldname, field in self.__class__.get_fields().items():
-            if fieldname!="id" and not field.is_read_only_in(self.__class__) and getattr(self, fieldname) is not None:
+            if (fieldname!="id") and\
+               (fieldname in self.auto_user_fields or not field.is_read_only_in(self.__class__) )\
+                    and getattr(self, fieldname) is not None:
                 d[fieldname]=unicode(field.to_raw(getattr(self, fieldname))).encode('utf-8')
         from pprint import pprint
         pprint(d)
@@ -515,6 +521,8 @@ class Model(object):
         """
         Saves object
         """
+        for user_field_name in self.auto_user_fields:
+            setattr(self, user_field_name, self.__models_manager.get_current_user())
 
         self.__dumped = False
         self.notify()
@@ -543,11 +551,31 @@ class Model(object):
 
 
 class User(Model):
-    #Todo: implement django behavoir
     resource_name = "django/users/"
-    username = CharField() 
-    first_name = CharField()
-    
+
+    username = CharField(u"Имя пользователя", max_length=30, unique=True)
+    first_name = CharField(u"Имя", max_length=30, blank=True)
+    last_name = CharField(u"Фамилия", max_length=30, blank=True)
+    email = EmailField(u"E-mail", blank=True)
+    password = CharField(u"Пароль", max_length=128)
+    is_staff = BooleanField(u"Статус персонала (доступ к админке)", default=False)
+    is_active = BooleanField(u"Активный", default=True)
+    is_superuser = BooleanField(u"Статус администратора", default=False)
+    last_login = DateTimeField(u"Последний вход")
+    date_joined = DateTimeField(u"Дата регистрации")
+#    groups = models.ManyToManyField(Group, verbose_name=_('groups'), blank=True,
+#       help_text=_("In addition to the permissions manually assigned, this user will also get all permissions granted to each group he/she is in."))
+#    user_permissions = models.ManyToManyField(Permission, verbose_name=_('user permissions'), blank=True)
+    class Meta:
+        verbose_name = u"Пользователь"
+        verbose_name_plural = u"Пользователи"
+
+    def __unicode__(self):
+        if self.last_name:
+            return self.last_name
+        else:
+            return self.username
+
 if __name__=="__main__":
     
     
