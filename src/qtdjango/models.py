@@ -45,7 +45,7 @@ class Field(object):
         self.__read_only.append(model_class)
 
     def is_read_only_in(self, model_class):
-        return model_class in self.__read_only or self.always_read_only
+        return (model_class in self.__read_only) or self.always_read_only
 
     def to_raw(self, data):
         return data
@@ -99,12 +99,23 @@ class DateField(Field):
     def to_raw(self, data):
         return data.strftime("%Y-%m-%d")
 
+    def to_text(self, data):
+        try:
+            return data.strftime("%d.%m.%Y %H:%M")
+        except AttributeError:
+            return super(DateField, self).to_text(data)
+
+
 class DateTimeField(DateField):
     pass
 
 class CharField(Field):
     pass
 
+
+class URLField(CharField):
+    def to_text(self, data):
+        return u'<a href="%s">%s</a>' %(data, data)
 
 
 class BooleanField(Field):
@@ -233,8 +244,6 @@ class Model(object):
 
     auto_user_fields = []
 
-    include_methods_results = {}
-    """@cvar: Dict of methods to fetch from server"""
 
     dump_order = 0
     """@cvar: Order to dump"""
@@ -277,12 +286,16 @@ class Model(object):
         for method in cls.exclude_methods:
             setattr(cls, method, getattr(Model, method))
 
-        for method in cls.include_methods_results:
-            setattr(cls, method, cls.include_methods_results[method])
+        for methodname in dir(cls):
+            try:
+                if getattr(cls, methodname).method_as_field:
+                    setattr(cls, methodname, getattr(cls, methodname).method_as_field)
+                    getattr(cls, methodname).always_read_only = True
+            except AttributeError:
+                pass
 
         for field in cls.auto_user_fields+\
-                     cls.read_only_fields+\
-                     cls.include_methods_results.keys():
+                     cls.read_only_fields:
             getattr(cls, field).set_read_only_in(cls)
 
         for fieldname, field in cls.get_rel_fields().items():

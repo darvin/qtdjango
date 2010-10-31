@@ -69,7 +69,10 @@ class MultiModelTreeView(QTreeWidget, MultiModelView):
 
     @QtCore.pyqtSlot("QTreeWidgetItem*", "QTreeWidgetItem*")
     def currentItemChange(self, current, previous):
-        self.modelSelectionChanged.emit(current.model_instance)
+        try:
+            self.modelSelectionChanged.emit(current.model_instance)
+        except AttributeError:
+            self.modelSelectionCleared.emit()
 
 
 

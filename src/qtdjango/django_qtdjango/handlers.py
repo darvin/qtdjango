@@ -11,6 +11,8 @@ from piston.utils import validate
 from forms import create_form_type
 import qtdjango
 from django.conf import settings
+import inspect
+
 
 class InfoHandler(AnonymousBaseHandler):
     allowed_methods = ('GET',)
@@ -93,6 +95,7 @@ class MetaHandler(BaseHandler):
             inst = self.model()
             inst = self.model(**attrs)
             inst.save()
+            print "saved,", inst
             return inst
         except self.model.MultipleObjectsReturned:
             return rc.DUPLICATE_ENTRY
@@ -104,11 +107,14 @@ def create_handler_type(model):
     f = []
     for field in model._meta.fields:
         f.append(field.name)
-    try:
-        for method in model.include_methods_results:
-            f.append(method)
-    except AttributeError:
-        pass
+
+    for methodname in dir(model):
+        try:
+            if getattr(model, methodname).method_as_field:
+                f.append(methodname)
+        except AttributeError:
+            pass
+
     for field in model._meta.many_to_many:
         f.append(field.name)
     handler_type = type(model.__name__+"Handler", (MetaHandler,),\
