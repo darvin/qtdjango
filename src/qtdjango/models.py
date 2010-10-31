@@ -51,7 +51,21 @@ class Field(object):
         return data
 
     def to_text(self, data):
-        return unicode(data)
+        if data is None:
+            return u"<пусто>"
+        else:
+            return unicode(data)
+
+    def validate(self, data, model_instance):
+        print data, self
+        if data is None or data=="":
+            if self.blank or self.null or self.is_read_only_in(model_instance.__class__):
+                return None
+            else:
+                return u"Поле не может быть пустым"
+        else:
+            return None
+
 
     def get_blank(self):
         return None
@@ -98,6 +112,12 @@ class BooleanField(Field):
     def to_raw(self, data):
         return data
 
+    def to_text(self, data):
+        if data:
+            return u"да"
+        else:
+            return u"нет"
+
 class EmailField(CharField):
     pass
     def to_raw(self, data):
@@ -139,8 +159,8 @@ class ForeignKey(RelField):
                 return data
         else:
             return None
-    def to_text(self, data):
-        return unicode(data)
+#    def to_text(self, data):
+#        return unicode(data)
 
     def to_raw(self, data):
         try:
@@ -445,6 +465,13 @@ class Model(object):
         Returns False if model instance failed validation
         """
         return self.__valid
+
+
+    def validate(self):
+        result = {}
+        for fieldname, field in self.get_fields().items():
+            result[fieldname]=field.validate(getattr(self, fieldname), self)
+        return result
 
 
     @classmethod

@@ -38,7 +38,7 @@ class DetailView(QDialog, BaseView):
                             self.fieldwidgets_dict[x.__class__](x)
                 except KeyError:
                     self._widgets[field] = LabelWidget() ##FIXME!
-            self.formlayout.addRow(QtCore.QString.fromUtf8(x.get_label()), self._widgets[field])
+            self.formlayout.addRow(x.get_label(), self._widgets[field])
         self.get_data_from_model()
 
         #then initialise inline views:
@@ -98,9 +98,27 @@ class DetailView(QDialog, BaseView):
         for v in self._inline_views:
             v.save()
 
+    def validate(self):
+
+        invalids = self.model_instance.validate()
+
+        result = True
+        for fieldname, value in invalids.items():
+            if value is not None:
+                field = getattr(self.model, fieldname)
+                result = False
+                newtext = field.get_label() +" <br> <i><font color=red>"+ value +"</color></i>"
+                self.formlayout.labelForField(self._widgets[fieldname]).setText(newtext)
+
+
+        return result
+
     def accept(self):
-        QDialog.accept(self)
         self.set_data_to_model()
+
+        if self.validate():
+            QDialog.accept(self)
+
 
     def reject(self):
         for v in self._inline_views:

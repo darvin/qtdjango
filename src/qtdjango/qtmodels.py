@@ -9,7 +9,7 @@ class AbstractModel(QtCore.QAbstractTableModel):
 
     def __init__(self, model, filter, fields=None, \
                  parent=None, blank_variant=False, \
-                 blank_variant_verbose=u"<нет>", *args):
+                 blank_variant_verbose=u"<пусто>", *args):
         QtCore.QAbstractTableModel.__init__(self, parent, *args)
         self.model = model
         self.filter = filter
