@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-from PyQt4.QtGui import QTreeWidget, QTreeWidgetItem
+from PyQt4.QtGui import QTreeWidget, QTreeWidgetItem, QDesktopServices
 from PyQt4 import QtCore
 from qtdjango.models import Model
-from PyQt4.QtWebKit import QWebView
+from PyQt4.QtWebKit import QWebView, QWebPage
 #noinspection PyUnresolvedReferences
 import PyQt4.QtNetwork
+from PyQt4.QtCore import QSettings
 
 __author__ = 'darvin'
 
@@ -81,14 +82,28 @@ class ModelInfoView(QWebView, MultiModelView):
 
         QWebView.__init__(self, *args, **kwargs)
         MultiModelView.__init__(self, *args, **kwargs)
-
         self.setHtml("")
+#        if self.open_link_in_external_browser():
+        self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
+        self.linkClicked.connect(self.link_clicked)
+
+    def link_clicked(self, link):
+        print self.open_link_in_external_browser()
+        if self.open_link_in_external_browser():
+            QDesktopServices.openUrl(link)
+        else:
+            self.load(link)
+
+
 
     def refresh(self):
         try:
             self.modelChanged(self.model_instance)
         except AttributeError:
             pass
+
+    def open_link_in_external_browser(self):
+        return QSettings().value("open_links_in_external_browser", True).toBool()
 
     @QtCore.pyqtSlot(Model)
     def modelChanged(self, model):

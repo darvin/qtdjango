@@ -57,7 +57,6 @@ class Field(object):
             return unicode(data)
 
     def validate(self, data, model_instance):
-        print data, self
         if data is None or data=="":
             if self.blank or self.null or self.is_read_only_in(model_instance.__class__):
                 return None

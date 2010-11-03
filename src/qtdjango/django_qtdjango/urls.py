@@ -25,7 +25,7 @@ def get_url_pattens(app_list):
             create_resource(model)))
 
     InfoHandler.set_models(models)
-    urlinfo = url(r"^info", Resource(InfoHandler))
+    urlinfo = url(r"^info", Resource(InfoHandler, HttpBasicAuthentication()))
     urlpatterns.append(urlinfo)
 
 

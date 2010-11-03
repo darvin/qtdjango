@@ -12,6 +12,9 @@ class ServerNotFoundError(Exception):
 class NotQtDjangoResponceError(Exception):
     pass
 
+class AuthError(Exception):
+    pass
+
 class Connection(object):
     def __init__(self, server, url, login=None, password=None):
         self.login, self.password, self.url, self.server = login, password, url, server
@@ -29,17 +32,20 @@ class Connection(object):
         @rtype: dict
         """
         try:
-            res = self.__connection.request_get("%s%s" % (self.url,resource_name))["body"]
+            res = self.__connection.request_get("%s%s" % (self.url,resource_name))
         except restclient.restful_lib.httplib2.socket.error:
             raise SocketError
         except restclient.httplib2.ServerNotFoundError:
             print "serv"
             raise ServerNotFoundError
 
-        try:
-            return json.loads(res)
-        except ValueError:
-            raise NotQtDjangoResponceError
+        if res["body"]=="Authorization Required":
+            raise AuthError
+        else:
+            try:
+                return json.loads(res["body"])
+            except ValueError:
+                raise NotQtDjangoResponceError
 
     def post_resource_to_server(self, resource_name, args):
         """

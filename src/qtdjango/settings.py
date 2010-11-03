@@ -4,8 +4,6 @@ from qtdjango.helpers import test_connection
 __author__ = 'darvin'
 
 
-
-from PyQt4 import QtCore
 from qtdjango.connection import *
 
 __author__ = 'darvin'
@@ -14,6 +12,12 @@ __author__ = 'darvin'
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
+
+class BooleanEdit(QCheckBox):
+    def text(self):
+        return QVariant(self.checkState()).toString()
+    def setText(self, text):
+        self.setChecked(QVariant(text).toBool())
 
 
 class SettingsDialog(QDialog):
@@ -26,6 +30,8 @@ class SettingsDialog(QDialog):
             ("server_package", u"Название пакета сервера", QLineEdit, "cryotec_server"),
             ("login", u"Ваш логин", QLineEdit, ""),
             ("password", u"Ваш пароль", QLineEdit, ""),
+            ("open_links_in_external_browser", \
+             u"Открывать ссылки из окна информации во внешнем браузере", BooleanEdit, True),
 
         ]
     def __init__(self, parent=None, error_message=None, models_manager=None):
@@ -128,6 +134,10 @@ class SettingsDialog(QDialog):
             self.message(text=u"Не правильно настроен путь на удаленном сервере или \
 удаленный сервер не является сервером системы", error=True, fields=\
                             ("address","api_path"))
+
+        except AuthError:
+            self.message(text=u"Неверное имя пользователя или пароль", error=True, fields=\
+                            ("login","password"))
 
 
         return False
