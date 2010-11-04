@@ -1,6 +1,10 @@
 # Preambula
 QtDjango is library to connect to django-piston powered server and use it's models in PyQt application
 
+# Downloads
+
+http://pypi.python.org/pypi/qtdjango/
+
 # Installing
 
     easy_install qtdjango
