@@ -3,7 +3,7 @@ QtDjango is library to connect to django-piston powered server and use it's mode
 
 # Downloads
 
-http://pypi.python.org/pypi/qtdjango/
+[http://pypi.python.org/pypi/qtdjango/]
 
 # Installing
 
