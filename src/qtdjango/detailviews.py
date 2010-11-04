@@ -55,8 +55,13 @@ class DetailView(QDialog, BaseView):
                                       | QDialogButtonBox.Cancel)
         Qt.QObject.connect(buttonBox, Qt.SIGNAL("accepted()"), self, Qt.SLOT("accept()"));
         Qt.QObject.connect(buttonBox, Qt.SIGNAL("rejected()"), self, Qt.SLOT("reject()"));
-        self.formlayout.addRow(buttonBox)
-        self.setLayout(self.formlayout)
+
+        v_layout = QVBoxLayout(self)
+        v_layout.addLayout(self.formlayout)
+        v_layout.addWidget(buttonBox)
+
+
+        self.setLayout(v_layout)
         self.set_filter(filter)
 
 
