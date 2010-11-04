@@ -22,6 +22,8 @@ class DetailView(QDialog, BaseView):
         QDialog.__init__(self, parent, **kwargs)
         BaseView.__init__(self, **kwargs)
 
+        self.setWindowTitle(u"%s: редактирование" % self.model.verbose_name())
+
         self.model_instance = model_instance
 
         self.formlayout = QFormLayout()
