@@ -36,6 +36,7 @@ class SettingsDialog(QDialog):
         ]
     def __init__(self, parent=None, error_message=None, models_manager=None):
         super(SettingsDialog, self).__init__(parent)
+        self.setWindowTitle(u"Настройки")
         self.setModal(True)
         self.formlayout = QFormLayout()
         self.models_manager = models_manager
@@ -60,9 +61,6 @@ class SettingsDialog(QDialog):
         testButton = QPushButton(u"Тестировать соединение")
         buttonBox.addButton(testButton, QDialogButtonBox.ActionRole)
         testButton.clicked.connect(self.test)
-        resetButton = QPushButton(u"Сбросить настройки")
-        buttonBox.addButton(resetButton, QDialogButtonBox.DestructiveRole)
-        resetButton.clicked.connect(self.reset)
         buttonBox.accepted.connect(self.accept)
         buttonBox.rejected.connect(self.reject)
         buttonBox.button(QDialogButtonBox.RestoreDefaults).clicked.connect(self.restore)
@@ -144,6 +142,3 @@ class SettingsDialog(QDialog):
 
 
 
-
-    def reset(self):
-        print "reset"

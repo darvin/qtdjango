@@ -88,7 +88,6 @@ class ModelInfoView(QWebView, MultiModelView):
         self.linkClicked.connect(self.link_clicked)
 
     def link_clicked(self, link):
-        print self.open_link_in_external_browser()
         if self.open_link_in_external_browser():
             QDesktopServices.openUrl(link)
         else:

@@ -346,8 +346,6 @@ class Model(object):
                (fieldname in self.auto_user_fields or not field.is_read_only_in(self.__class__) )\
                     and getattr(self, fieldname) is not None:
                 d[fieldname]=unicode(field.to_raw(getattr(self, fieldname))).encode('utf-8')
-        from pprint import pprint
-        pprint(d)
         return d
 
     @classmethod
@@ -468,7 +466,6 @@ class Model(object):
                     if kwargs[field]!=m:
                         return False
                 else:
-                    print field, self
                     raise KeyError
         return True
 
@@ -523,7 +520,6 @@ class Model(object):
     @classmethod
     def notify(cls):
         """Sends notify to all views, connected to model"""
-        print "notify", cls, cls.views
         for v in cls.views:
             v.refresh()
         if not cls.is_all_dumped():

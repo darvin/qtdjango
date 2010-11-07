@@ -47,7 +47,6 @@ class AbstractModel(QtCore.QAbstractTableModel):
     def get_model_instance_by_index(self, index):
         data = self.filtered_model()
         if not index.isValid():
-            print index.row()
             return QtCore.QVariant()
 
         return data[index.row()]

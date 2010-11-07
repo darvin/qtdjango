@@ -73,7 +73,6 @@ class DetailView(QDialog, BaseView):
             self._widgets[field].setData(getattr(self.model_instance,field))
 
     def set_filter(self, filter):
-        print "filter ", filter
         if filter is not None:
             for field, w in self._widgets.items():
                 if isinstance(w, ForeignKeyWidget):

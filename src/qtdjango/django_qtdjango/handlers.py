@@ -95,7 +95,6 @@ class MetaHandler(BaseHandler):
             inst = self.model()
             inst = self.model(**attrs)
             inst.save()
-            print "saved,", inst
             return inst
         except self.model.MultipleObjectsReturned:
             return rc.DUPLICATE_ENTRY

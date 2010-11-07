@@ -118,7 +118,6 @@ class TextEditWidget(QTextEdit, Widget):
     def __init__(self, field):
         Widget.__init__(self, field)
         QTextEdit.__init__(self)
-        self.setSizePolicy(QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding))
 
     def getData(self):
         return unicode(self.toPlainText())

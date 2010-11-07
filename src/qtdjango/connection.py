@@ -36,7 +36,6 @@ class Connection(object):
         except restclient.restful_lib.httplib2.socket.error:
             raise SocketError
         except restclient.httplib2.ServerNotFoundError:
-            print "serv"
             raise ServerNotFoundError
 
         if res["body"]=="Authorization Required":

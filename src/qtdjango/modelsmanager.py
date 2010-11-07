@@ -90,7 +90,6 @@ class ModelsManager(object):
         for model in self.models:
             model.objects = objs[model.__name__]
             model.notify()
-            print model.all()
         if not self.is_all_dumped():
             self.notify_changes()
 
@@ -154,7 +153,6 @@ class ModelsManager(object):
 
         self.models.sort(key=attrgetter("dump_order"))
         for model in self.models:
-            print model
             responces[model.verbose_name(True)] = model.dump()
         for func in self.notify_dumped:
             func(responces)
