@@ -27,7 +27,7 @@ class SettingsDialog(QDialog):
 #            (name, caption, widget object, default value),
             ("address", u"Адрес сервера", QLineEdit, "http://127.0.0.1:8000"),
             ("api_path", u"Путь к api сервера", QLineEdit, "/api/"),
-            ("server_package", u"Название пакета сервера", QLineEdit, "cryotec_server"),
+            ("server_package", u"Название пакета сервера", QLineEdit, "none"),
             ("login", u"Ваш логин", QLineEdit, ""),
             ("password", u"Ваш пароль", QLineEdit, ""),
             ("open_links_in_external_browser", \

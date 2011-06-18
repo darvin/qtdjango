@@ -106,7 +106,8 @@ class DateField(Field):
 
 
 class DateTimeField(DateField):
-    pass
+    def to_raw(self, data):
+        return data.strftime("%Y-%m-%d %H:%M:%S")
 
 class CharField(Field):
     pass
