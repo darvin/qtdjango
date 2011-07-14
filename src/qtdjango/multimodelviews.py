@@ -107,22 +107,25 @@ class ModelInfoView(QWebView, MultiModelView):
     @QtCore.pyqtSlot(Model)
     def modelChanged(self, model):
         self.model_instance = model
-        header1 = model.__class__.verbose_name()
-        header2 = "" #unicode(model)
-        fields = model.__class__.get_fields()
-        field_text_values = {}
-        for fieldname, field in fields.items():
-            if not fieldname in ("user", "id", "extra_to_html"):
-                field_text_values[fieldname] = []
-                field_text_values[fieldname].append(field.verbose_name)
-                field_text_values[fieldname].append(field.to_text(getattr(model, fieldname)))
+        if hasattr(self.model_instance, "tohtml"):
+            html = self.model_instance.tohtml()
+        else:
+            header1 = model.__class__.verbose_name()
+            header2 = "" #unicode(model)
+            fields = model.__class__.get_fields()
+            field_text_values = {}
+            for fieldname, field in fields.items():
+                if not fieldname in ("user", "id", "extra_to_html"):
+                    field_text_values[fieldname] = (field.verbose_name,field.to_text(getattr(model, fieldname)))
 
 
-        html = u""
-        html += u"<h1>%s</h1><h2>%s</h2>" %(header1,header2)
-        html += u"<br>".join([u"<b>%s:</b> <i>%s</i>"%(x[0], x[1]) for x in field_text_values.values()])
-
-        html += "<br>" + model.extra_to_html()
+            html = u""
+            html += u"<h1>%s</h1><h2>%s</h2>" %(header1,header2)
+            html += u"<table>"
+            for rowname, rowvalue in field_text_values.values():
+                html += u"<tr><td><b>{0}</b></td> <td>{1}</td></tr>".format(rowname, rowvalue)
+            html += u"</table>"
+            html += "<br>" + model.extra_to_html()
 
         self.setHtml(html)
 

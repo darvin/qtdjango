@@ -88,6 +88,9 @@ class IdField(Field):
 class TextField(Field):
     pass
 
+class HTMLField(TextField):
+    pass    
+
 from datetime import datetime
 class DateField(Field):
     def from_raw(self, data):
