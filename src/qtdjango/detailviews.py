@@ -13,6 +13,7 @@ class DetailView(QDialog, BaseView):
                        DateTimeField:DateTimeEditWidget,
                        DateField:DateTimeEditWidget,
                        BooleanField:CheckBoxWidget,
+                       ManyToManyField:ManyToManyWidget,
                        }
 
     inline_views = ()

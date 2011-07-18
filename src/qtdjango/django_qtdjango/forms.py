@@ -1,3 +1,7 @@
+import json
+from django.forms.models import ModelMultipleChoiceField
+from django.http import QueryDict
+
 __author__ = 'darvin'
 
 from django import forms
@@ -5,6 +9,21 @@ from django import forms
 class MetaForm(forms.ModelForm):
     class Meta:
         pass
+    def __init__(self, *args, **kwargs):
+
+        super(MetaForm, self).__init__(*args, **kwargs)
+
+
+        data = {   }
+
+        for field_name, field in self.fields.items():
+            if isinstance(field, ModelMultipleChoiceField):
+                data[field_name] = json.loads(self.data[field_name])
+            else:
+                data[field_name] = self.data[field_name]
+        self.data = data
+
+
     def clean(self):
         cleaned_data = self.cleaned_data
 

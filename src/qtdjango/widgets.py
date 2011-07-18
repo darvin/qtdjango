@@ -35,15 +35,24 @@ class LabelWidget(QLabel, Widget):
         if data is not None:
             self.setText(str(data))
 
-class ForeignKeyWidget(QComboBox, Widget):
+
+class AbstactModelBasedWidget(Widget):
     def __init__(self, field):
         Widget.__init__(self, field)
-        QComboBox.__init__(self)
         self.model = self.field.model
-
 
     def set_filter(self, filter):
         self.qtmodel.set_filter(filter)
+
+    def setData(self, data):
+        self.qtmodel = ListModel(parent=self, filter=None,\
+                                model=self.model, blank_variant=self.field.blank)
+        self.setModel(self.qtmodel)
+
+class ForeignKeyWidget(QComboBox, AbstactModelBasedWidget):
+    def __init__(self, field):
+        AbstactModelBasedWidget.__init__(self, field)
+        QComboBox.__init__(self)
 
     def getData(self):
         try:
@@ -53,13 +62,27 @@ class ForeignKeyWidget(QComboBox, Widget):
             return None
 
     def setData(self, data):
-        self.qtmodel = ListModel(parent=self, filter=None,\
-                                model=self.model, blank_variant=self.field.blank)
-        self.setModel(self.qtmodel)
+        super(ForeignKeyWidget, self).setData(data)
         if data is not None:
             self.setCurrentIndex(self.qtmodel.get_index_of_model(data))
 
+class ManyToManyWidget(QListView, AbstactModelBasedWidget):
+    def __init__(self, field):
+        AbstactModelBasedWidget.__init__(self, field)
+        QListView.__init__(self)
+        self.setSelectionMode(QAbstractItemView.MultiSelection)
+    def getData(self):
+        return [self.qtmodel.data(index,QtCore.Qt.UserRole) for index in self.selectedIndexes()]
 
+    def setData(self, data):
+        super(ManyToManyWidget, self).setData(data)
+        self.selectionModel().clear
+        if data is not None:
+            for item in data:
+                index = self.qtmodel.createIndex(self.qtmodel.get_index_of_model(item),0)
+                self.selectionModel().select(index, QItemSelectionModel.Select)
+
+#            self.setCurrentIndex(self.qtmodel.get_index_of_model(data))
 
 class SpinBoxWidget(QSpinBox, Widget):
     def __init__(self, field):

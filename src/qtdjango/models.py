@@ -208,10 +208,12 @@ class ManyToManyField(ForeignKey):
         else:
             return None
     def to_text(self, data):
-            return unicode(data)
+        return u", ".join([unicode(item) for item in data])
 
     def to_raw(self, data):
-        raise NotImplementedError
+        if not data:
+            return []
+        return [item.id for item in data]
 
 
 

@@ -7,6 +7,8 @@ This module must be imported from django enviroment
 from piston.handler import AnonymousBaseHandler, BaseHandler
 from piston.utils import rc
 from piston.utils import validate
+import json
+from django.db.models.fields.related import ForeignKey, ManyToManyField
 
 from forms import create_form_type
 import qtdjango
@@ -76,16 +78,21 @@ class MetaHandler(BaseHandler):
         attrs = self.flatten_dict(request.POST)
 
         for field in self.model._meta.fields:
-            if field.rel:
-                # this is a ForeignKey (as far as I can tell... _meta isn't documented)
-                # so we need to convert it to it's pk equivilent... there's most likely
-                # a better way of doing this than hardcoding stuff...
-                if field.name in attrs:
-                    try:
-                        attrs[field.name] =  field.rel.to.objects.get(\
-                            **{field.rel.field_name: attrs[field.name]})
-                    except:
-                        pass
+            # this is a ForeignKey (as far as I can tell... _meta isn't documented)
+            # so we need to convert it to it's pk equivilent... there's most likely
+            # a better way of doing this than hardcoding stuff...
+            if field.name in attrs:
+                if isinstance(field, ForeignKey):
+                    attrs[field.name] =  field.rel.to.objects.get(\
+                        **{field.rel.field_name: attrs[field.name]})
+                elif isinstance(field, ManyToManyField):
+
+                    print
+        attrs_many_to_many = {}
+        for field in self.model._meta.many_to_many:
+            attrs_many_to_many[field.name] =  field.rel.to.objects.filter(\
+                        **{"pk__in": json.loads(attrs[field.name])})
+            del attrs[field.name]
 
 
         try:
@@ -95,6 +102,13 @@ class MetaHandler(BaseHandler):
             inst = self.model()
             inst = self.model(**attrs)
             inst.save()
+            for field in attrs_many_to_many:
+                print getattr(inst,field)
+                print attrs_many_to_many[field]
+                setattr(inst,field, attrs_many_to_many[field])
+
+            if attrs_many_to_many:
+                inst.save()
             return inst
         except self.model.MultipleObjectsReturned:
             return rc.DUPLICATE_ENTRY
