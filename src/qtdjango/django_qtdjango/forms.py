@@ -17,10 +17,11 @@ class MetaForm(forms.ModelForm):
         data = {   }
 
         for field_name, field in self.fields.items():
-            if isinstance(field, ModelMultipleChoiceField):
-                data[field_name] = json.loads(self.data[field_name])
-            else:
-                data[field_name] = self.data[field_name]
+            if field_name in self.data:
+                if isinstance(field, ModelMultipleChoiceField):
+                    data[field_name] = json.loads(self.data[field_name])
+                else:
+                    data[field_name] = self.data[field_name]
         self.data = data
 
 
